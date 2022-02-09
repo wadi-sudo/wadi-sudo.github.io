@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>GIS Routing</title>
+<meta charset="utf-8" />
+<!-- Leaflet CSS/js -->
+<link rel="stylesheet" type="text/css" href="leaflet/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<link rel="icon" href="logo2.png" sizes="16x16" type="image/png">
+<link rel="stylesheet" href="src/plugins/easy-button.css">
+
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@v0.74.0/dist/L.Control.Locate.min.css" />
+
+
+</head>
+<body>
+
+	<div id="demo" style="width: 100%; height: 97vh">
+		
+
+
+	</div>
+	<script type="text/javascript" src="leaflet/leaflet.js"></script>
+	<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+        <script src="src/plugins/easy-button.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@v0.74.0/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+	<script>
+
+		var map = L.map('demo').setView([36, 10], 5);
+		var mapLink =
+		'<a href="http://openstreetmap.org">OpenStreetMap</a>';
+		L.tileLayer(
+		'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: 'Map data &copy; ' + mapLink,
+		maxZoom: 15,
+		}).addTo(map);
+
+		var routing = L.Routing.control({
+			waypoints: [
+			L.latLng(36.8, 10.14),
+			L.latLng(36.8, 10.14)
+			]
+		})
+		routing.addTo(map);
+
+
+               
+                
+                ctlEasybutton = L.easyButton('<img src="home.svg">', function(){
+                   location.href = "index.html"
+                }).addTo(map);
+                 L.control.locate().addTo(map);
+
+
+	</script>
+</body>
