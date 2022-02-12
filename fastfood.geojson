@@ -1,0 +1,20 @@
+{
+"type": "FeatureCollection",
+"name": "fastfood",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "osm_id": "1080369275", "code": 2302, "fclass": "fast_food", "name": "Solero", "osm_id_2": 253296180, "name_2": null, "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2319704, 36.8315633 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1440219243", "code": 2302, "fclass": "fast_food", "name": "Azzure", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2669606, 36.8476952 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1440311918", "code": 2302, "fclass": "fast_food", "name": "Aroma", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2721508, 36.8477349 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1442446454", "code": 2302, "fclass": "fast_food", "name": null, "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2677262, 36.8474156 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1446108296", "code": 2302, "fclass": "fast_food", "name": "Fayrouz", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2418537, 36.8356245 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1446108304", "code": 2302, "fclass": "fast_food", "name": null, "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2391605, 36.8386944 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1446112350", "code": 2302, "fclass": "fast_food", "name": "Picasso", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2365533, 36.8375456 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1457729898", "code": 2302, "fclass": "fast_food", "name": "Ephoria", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2673516, 36.8477517 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2203137150", "code": 2302, "fclass": "fast_food", "name": "سموقس", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2372999, 36.832592 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2592447695", "code": 2302, "fclass": "fast_food", "name": "Punto g", "osm_id_2": 253296180, "name_2": null, "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2311738, 36.8323792 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "4488493394", "code": 2302, "fclass": "fast_food", "name": "Baguette & Baguette", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.223248, 36.8311862 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "4558597504", "code": 2302, "fclass": "fast_food", "name": "Pizza Lago", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2430501, 36.8347519 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303297981", "code": 2302, "fclass": "fast_food", "name": "Pizzeria Guitara", "osm_id_2": 144034984, "name_2": "حي الصنوبر", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2834258, 36.8452253 ] ] } }
+]
+}

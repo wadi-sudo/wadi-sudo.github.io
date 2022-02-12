@@ -1,0 +1,9 @@
+﻿{
+"type": "FeatureCollection",
+"name": "hotel",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "osm_id": "6272241603", "code": 2401, "fclass": "hotel", "name": "Hotel Lac Leman", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2445192, 36.840573 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303297980", "code": 2401, "fclass": "hotel", "name": "Residence Ulysse", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2774704, 36.8467449 ] ] } }
+]
+}

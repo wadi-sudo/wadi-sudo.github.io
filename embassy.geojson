@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"name": "embassy",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "osm_id": "2613810470", "code": 2011, "fclass": "embassy", "name": "Ambassade de Malta", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2304603, 36.8317321 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2816135034", "code": 2011, "fclass": "embassy", "name": "Ambassade de Fenland", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2291583, 36.8307636 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2816135037", "code": 2011, "fclass": "embassy", "name": "Ambassade de souide", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2293176, 36.8308022 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2817062701", "code": 2011, "fclass": "embassy", "name": "Ambassade de la Republique Democratique du Congo", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2465073, 36.8368952 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2817062787", "code": 2011, "fclass": "embassy", "name": "Ambassade de Indonisya", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2309629, 36.8353675 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "2819163479", "code": 2011, "fclass": "embassy", "name": "Ambassade de la Republique Bolivarienne du Venezuela", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2471381, 36.8403918 ] ] } }
+]
+}
