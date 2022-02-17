@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "suede",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+
+{ "type": "Feature", "properties": { "osm_id": "2816135037", "code": 2011, "fclass": "embassy", "name": "Ambassade de suede", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential", "url": "osm/suede.png" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2293176, 36.8308022 ] ] } }
+]
+}

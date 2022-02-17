@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "fenland",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+
+{ "type": "Feature", "properties": { "osm_id": "2816135034", "code": 2011, "fclass": "embassy", "name": "Ambassade de Fenland", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential", "url": "osm/fenland.png" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2291583, 36.8307636 ] ] } }
+]
+}
