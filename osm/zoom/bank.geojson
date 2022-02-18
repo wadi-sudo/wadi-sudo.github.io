@@ -1,0 +1,25 @@
+﻿{
+"type": "FeatureCollection",
+"name": "bank",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "osm_id": "1037092872", "code": 2601, "fclass": "bank", "name": "Assurances BIAT", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2693354, 36.8479021 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1439755547", "code": 2601, "fclass": "bank", "name": "Attijari", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2696845, 36.8480884 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1440219220", "code": 2601, "fclass": "bank", "name": "Amen Banque", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2661622, 36.84758 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1442446436", "code": 2601, "fclass": "bank", "name": "", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2414894, 36.8356094 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1442446443", "code": 2601, "fclass": "bank", "name": "BIAT", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2370689, 36.8341734 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1446112369", "code": 2601, "fclass": "bank", "name": "Amen Bank - Agence Berges du Lac", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2372692, 36.8377396 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1880955220", "code": 2601, "fclass": "bank", "name": "", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2365962, 36.8322639 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "1888285679", "code": 2601, "fclass": "bank", "name": "", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2375133, 36.832369 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "4325639101", "code": 2601, "fclass": "bank", "name": "", "osm_id_2": 144034984, "name_2": "حي الصنوبر", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2846116, 36.8459132 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "4503226190", "code": 2601, "fclass": "bank", "name": "", "osm_id_2": 144034984, "name_2": "حي الصنوبر", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2804808, 36.8468744 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6291985298", "code": 2601, "fclass": "bank", "name": "BTK", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2318789, 36.8314529 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6291985298", "code": 2601, "fclass": "bank", "name": "BTK", "osm_id_2": 253296180, "name_2": null, "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2318789, 36.8314529 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6294437979", "code": 2601, "fclass": "bank", "name": "Zitouna", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2771135, 36.8488085 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303297937", "code": 2601, "fclass": "bank", "name": "QNB", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2678096, 36.8476292 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303297975", "code": 2601, "fclass": "bank", "name": "Banque Africaine De Developpement", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2716156, 36.847115 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303297976", "code": 2601, "fclass": "bank", "name": "STB", "osm_id_2": 93357004, "name_2": "ضفاف البحيرة 2", "type": "commercial" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2696151, 36.8463132 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6303299187", "code": 2601, "fclass": "bank", "name": "BTE", "osm_id_2": 144034984, "name_2": "حي الصنوبر", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2829679, 36.8438755 ] ] } },
+{ "type": "Feature", "properties": { "osm_id": "6881653460", "code": 2601, "fclass": "bank", "name": "UIB", "osm_id_2": 138398718, "name_2": "ضفاف البحيرة", "type": "residential" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.2443685, 36.8394758 ] ] } }
+]
+}
