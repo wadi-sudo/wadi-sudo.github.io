@@ -378,7 +378,7 @@ var style3 = {
     "weight": 3,
     "opacity": 1
 }
-var lines3 = new L.GeoJSON.AJAX("osm/road_lac3.geojson", { onEachFeature: popUp, style: style3 });
+var lines3 = new L.GeoJSON.AJAX("osm/road_lac3.geojson", { onEachFeature: popUp });
 
 var stylem = {
     "color": "#ffffff",
@@ -1649,7 +1649,7 @@ var currentZoom = map.getZoom();
         case 14:
             clean_map();
             lines12.addTo(map);
-            building2.addTo(map);
+           // building2.addTo(map);
             
             //adm.addTo(map);
             //principalroad.addTo(map);
@@ -1661,7 +1661,7 @@ var currentZoom = map.getZoom();
             clean_map();
             trunk.addTo(map);
             lines12.addTo(map);
-            building2.addTo(map);
+           // building2.addTo(map);
             lines3.addTo(map);
             loisir.addTo(map);
             
@@ -1671,7 +1671,7 @@ var currentZoom = map.getZoom();
             clean_map();
 
             lines12.addTo(map);
-            building2.addTo(map);
+           // building2.addTo(map);
             localroad2.addTo(map);
             principalroad.addTo(map);
             trunk.addTo(map);
@@ -1691,7 +1691,7 @@ linesfinal.addTo(map);
             hotel.addTo(map);
             bank.addTo(map);
             loisir.addTo(map);
-            building2.addTo(map);
+            //building2.addTo(map);
 
             
             // show rental
@@ -1719,14 +1719,14 @@ linesfinal.addTo(map);
             fastfood2.addTo(map);
             hotel2.addTo(map);
             bank2.addTo(map);
-            building2.addTo(map);
+            //building2.addTo(map);
 
           break;
         case 16:
             clean_map();
             lines12.addTo(map);
             lines3.addTo(map);
-            building2.addTo(map);
+           // building2.addTo(map);
 
             
             // show rental
