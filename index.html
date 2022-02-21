@@ -383,9 +383,19 @@ var lines3 = new L.GeoJSON.AJAX("osm/road_lac3.geojson", { onEachFeature: popUp,
 var stylem = {
     "color": "#ffffff",
     "weight": 1,
-    "opacity": 0.7
+    "opacity": 0.7,
+    "dashArray": '10, 10', 
+    "dashOffset": '5'
+}
+var stylefinal = {
+    "color": "#8E8D8D",
+    "weight": 25,
+    "opacity": 0.8
+    //"dashArray": '10, 10', 
+    //"dashOffset": '1'
 }
 var linesm = new L.GeoJSON.AJAX("osm/road_lac123_m.geojson", { style: stylem });
+var linesfinal = new L.GeoJSON.AJAX("osm/road_lac123_m.geojson", { style: stylefinal });
 
 var stylel = {
     "color": "#2B2E34",
@@ -1622,17 +1632,17 @@ var currentZoom = map.getZoom();
             //break;
         case 12:
             clean_map();
-            adm.addTo(map);
-            principalroad.addTo(map);
+            //adm.addTo(map);
+            //principalroad.addTo(map);
             //localroad2.addTo(map);
             trunk.addTo(map);
             // show Campus
             break;
         case 13:
             clean_map();
-            adm.addTo(map);
-            principalroad.addTo(map);
-            localroad2.addTo(map);
+            //adm.addTo(map);
+            //principalroad.addTo(map);
+            //localroad2.addTo(map);
             trunk.addTo(map);
             // show Campus
             break;
@@ -1641,9 +1651,9 @@ var currentZoom = map.getZoom();
             lines12.addTo(map);
             building2.addTo(map);
             
-            adm.addTo(map);
-            principalroad.addTo(map);
-            localroad2.addTo(map);
+            //adm.addTo(map);
+            //principalroad.addTo(map);
+            //localroad2.addTo(map);
             trunk.addTo(map);            
             // show Campus
             break;
@@ -1670,7 +1680,7 @@ var currentZoom = map.getZoom();
             break;
         case 17:
             clean_map();
-
+linesfinal.addTo(map);
             linesl.addTo(map);
             linesm.addTo(map);
             cafe.addTo(map);
