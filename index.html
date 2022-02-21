@@ -1,0 +1,1732 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>GIS</title>
+<link rel="icon" href="logo2.png" sizes="16x16" type="image/png">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="src/leaflet.css">
+        <link rel="stylesheet" href="src/css/bootstrap.css">
+        <link rel="stylesheet" href="src/plugins/L.Control.MousePosition.css">
+        <link rel="stylesheet" href="src/plugins/L.Control.Sidebar.css">
+        <link rel="stylesheet" href="src/plugins/Leaflet.PolylineMeasure.css">
+        <link rel="stylesheet" href="src/plugins/easy-button.css">
+        <link rel="stylesheet" href="src/plugins/leaflet-styleeditor/css/Leaflet.StyleEditor.css">
+        <link rel="stylesheet" href="src/css/font-awesome.min.css">
+        <link rel="stylesheet" href="src/plugins/leaflet.awesome-markers.css">
+        <link rel="stylesheet" href="src/plugins/leaflet-mapkey/MapkeyIcons.css">
+        <link rel="stylesheet" href="src/plugins/leaflet-mapkey/L.Icon.Mapkey.css">
+        <link rel="stylesheet" href="src/plugins/MarkerCluster.css">
+        <link rel="stylesheet" href="src/plugins/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="src/jquery-ui.min.css">
+        <link rel="stylesheet" href="src/plugins/leaflet-legend.css">
+        
+        <script src="src/leaflet-src.js"></script>
+        <script src="src/jquery-3.2.0.min.js"></script>
+        <script src="src/plugins/L.Control.MousePosition.js"></script>
+        <script src="src/plugins/L.Control.Sidebar.js"></script>
+        <script src="src/plugins/Leaflet.PolylineMeasure.js"></script>
+        <script src="src/plugins/easy-button.js"></script>
+        <script src="src/plugins/leaflet-providers.js"></script>
+        <script src="src/plugins/leaflet-styleeditor/javascript/Leaflet.StyleEditor.js"></script>
+        <script src="src/plugins/leaflet-styleeditor/javascript/Leaflet.StyleForms.js"></script>
+        <script src="src/plugins/leaflet.ajax.min.js"></script>
+        <script src="src/plugins/leaflet.sprite.js"></script>
+        <script src="src/plugins/leaflet.awesome-markers.min.js"></script>
+        <script src="src/plugins/leaflet-mapkey/L.Icon.Mapkey.js"></script>
+        <script src="src/plugins/leaflet.markercluster.js"></script>
+        <script src="src/jquery-ui.min.js"></script>
+        <script src="src/plugins/leaflet-legend.js"></script>
+        
+<!--    ***************  Begin Leaflet.Draw-->
+        
+        <script src="src/plugins/leaflet-draw/Leaflet.draw.js"></script>
+        <script src="src/plugins/leaflet-draw/Leaflet.Draw.Event.js"></script>
+        <link rel="stylesheet" href="src/plugins/leaflet-draw/leaflet.draw.css"/>
+
+        <script src="src/plugins/leaflet-draw/Toolbar.js"></script>
+        <script src="src/plugins/leaflet-draw/Tooltip.js"></script>
+
+        <script src="src/plugins/leaflet-draw/ext/GeometryUtil.js"></script>
+        <script src="src/plugins/leaflet-draw/ext/LatLngUtil.js"></script>
+        <script src="src/plugins/leaflet-draw/ext/LineUtil.Intersect.js"></script>
+        <script src="src/plugins/leaflet-draw/ext/Polygon.Intersect.js"></script>
+        <script src="src/plugins/leaflet-draw/ext/Polyline.Intersect.js"></script>
+        <script src="src/plugins/leaflet-draw/ext/TouchEvents.js"></script>
+
+        <script src="src/plugins/leaflet-draw/draw/DrawToolbar.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Feature.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.SimpleShape.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Polyline.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Circle.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Marker.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Polygon.js"></script>
+        <script src="src/plugins/leaflet-draw/draw/handler/Draw.Rectangle.js"></script>
+
+
+        <script src="src/plugins/leaflet-draw/edit/EditToolbar.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/EditToolbar.Edit.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/EditToolbar.Delete.js"></script>
+
+        <script src="src/plugins/leaflet-draw/Control.Draw.js"></script>
+
+        <script src="src/plugins/leaflet-draw/edit/handler/Edit.Poly.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/Edit.SimpleShape.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/Edit.Circle.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/Edit.Rectangle.js"></script>
+        <script src="src/plugins/leaflet-draw/edit/handler/Edit.Marker.js"></script>
+<script src="js/leaflet.ajax.min.js"></script>
+<script src="src/turf.min.js"></script>
+
+
+ <!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">-->
+<link rel="stylesheet" href="js/L.Control.Locate.min.css" />
+
+<script src="js/L.Control.Locate.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+
+  <script src="leaflet-control-osm-geocoder/Control.OSMGeocoder.js"></script>
+  <link rel="stylesheet" href="leaflet-control-osm-geocoder/Control.OSMGeocoder.css" />
+
+<!--<script
+      src="https://unpkg.com/esri-leaflet@2.3.3/dist/esri-leaflet.js"
+      integrity="sha512-cMQ5e58BDuu1pr9BQ/eGRn6HaR6Olh0ofcHFWe5XesdCITVuSBiBZZbhCijBe5ya238f/zMMRYIMIIg1jxv4sQ=="
+      crossorigin=""
+    ></script>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/esri-leaflet-geocoder@2.3.2/dist/esri-leaflet-geocoder.css"
+      integrity="sha512-IM3Hs+feyi40yZhDH6kV8vQMg4Fh20s9OzInIIAc4nx7aMYMfo+IenRUekoYsHZqGkREUgx0VvlEsgm7nCDW9g=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/esri-leaflet-geocoder@2.3.2/dist/esri-leaflet-geocoder.js"
+      integrity="sha512-8twnXcrOGP3WfMvjB0jS5pNigFuIWj4ALwWEgxhZ+mxvjF5/FBPVd5uAxqT8dd2kUmTVK9+yQJ4CmTmSg/sXAQ=="
+      crossorigin=""
+    ></script>
+-->
+
+</head>
+
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container-fluid">
+        <a href="#"><img id="navlogo" src="cnct2.png" alt="logo"></a>
+
+        <div class="navbar-collapse collapse">
+
+            
+              <h3 style="color: white; margin-left: 44%; margin-top: 1%;"><b> Tunis, Lac 1</b></h3>
+
+                
+        </div>
+      </div>
+    </div>
+
+<div id='container'>
+  <!--<div id="sidebar">
+        <div class="sidebar-wrapper">
+          <div id="features" class="panel panel-default">
+            <div class="panel-heading">
+              <h2 class="panel-title" style="text-align: center; margin-top: 7%;"><b>Legend</b></h2> 
+
+
+            </div>
+            <div><h3><img src="logo/bank2.png"> Bank</h3></div>
+            <div ><h3><img src="logo/cafe2.png"> Cafe</h3></div>
+            <div><h3><img src="logo/embassy2.png"> Embassy</h3></div>
+            <div><h3><img src="logo/fastfood2.png"> Fastfood</h3></div>
+            <div><h3><img src="logo/hotel2.png"> Hotel</h3></div>
+            <div><h3><img src="logo/manege22.png"> Manege</h3></div>
+            <div><h3><img src="logo/pharmacie2.png"> Pharmacy</h3></div>
+            <div><h3><img src="logo/restaurant2.png"> Restaurant</h3></div>
+ 
+          </div>
+        </div>
+      </div>-->
+    <div id="side-bar" class="col-md-3">
+            <!--<a href="routing.html"><button id='btnLocate' class='btn btn-primary btn-block'>OSM Routing</button></a><br>
+            <button onclick="routing()" id='btnLocate' class='btn btn-primary btn-block'>Routing</button><br>-->
+            <!--<button id="btnShowLegend" class='btn btn-primary btn-block'>Show Legend</button><br>-->
+            <!--<a href="../index.html"><button id="home" class='btn btn-primary btn-block'>Data Management</button></a><br>
+       
+            <h4>Zoom Level: <span id='zoom-level'></span></h4>
+            <h4>Map Center: <span id='map-center'></span></h4>-->
+            <h1 style="text-align: center;"><b>Legend</b></h1>
+            
+            
+            <div><h4><input type='checkbox' id='bank'> <img src="logo/bank2.png"> Bank</h4></div>
+            <div ><h4><input type='checkbox' id='cafe'> <img src="logo/cafe2.png"> Cafe</h4></div>
+            <div><h4><input type='checkbox' id='embassy'> <img src="logo/embassy2.png"> Embassy</h4></div>
+            <div><h4><input type='checkbox' id='fastfood'> <img src="logo/fastfood2.png"> Fastfood</h4></div>
+            <div><h4><input type='checkbox' id='hotel'> <img src="logo/hotel2.png"> Hotel</h4></div>
+            <div><h4><input type='checkbox' id='loisir'> <img src="logo/manege22.png"> Manege</h4></div>
+            <div><h4><input type='checkbox' id='pharmacie'> <img src="logo/pharmacie2.png"> Pharmacy</h4></div>
+            <div><h4><input type='checkbox' id='restaurant'> <img src="logo/restaurant2.png"> Restaurant</h4></div>
+
+    </div>
+
+<div id="map" >
+
+
+</div>
+</div>
+
+<style type="text/css">
+.navbar-inverse {
+
+    background-color: #027AB3  !important;
+    border-color: #027AB3   !important;
+    height: 25px    !important;
+}
+#navlogo{
+   width: 53px;
+   height: 52px;
+   float:center;
+   position:absolute;
+   margin-left: 39%;
+   margin-bottom: 0.5%;
+
+}
+  html, body, #container {
+  height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+body {
+  /* height of .navbar, customize with @navbar-height variable */
+  padding-top: 50px;
+}
+.navbar {
+  min-height: 50px;
+
+}
+#sidebar {
+  float: left;
+  height: 100%;
+  max-width: 100%;
+  width: 15%;
+}
+
+#map {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  height: 100%;
+  width: 100%;
+}
+.sidebar-wrapper {
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+@media (max-width: 767px) {
+#sidebar {
+  display: none;
+}
+}
+
+
+
+</style>
+<script>
+//var map = L.map('map').setView([36.827,10.245], 14);
+var map = L.map('map', {
+  center: [36.83390,10.2387],
+  zoom: 15,
+  maxZoom : 20
+});
+
+L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
+
+
+/*var img = L.tileLayer('base/{z}/{x}/{y}.png', 
+attribution: '&copy; <a href="Defense.tn">CNCT</a> contributors'
+}).addTo(map);*/
+var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'});
+
+    map.addControl(osmGeocoder);
+
+
+$('#cafe').click(function() {
+if (this.checked) {
+console.log('checked!');
+cafe.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(cafe); 
+};
+}); 
+$('#bank').click(function() {
+if (this.checked) {
+console.log('checked!');
+bank.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(bank); 
+};
+});  
+$('#restaurant').click(function() {
+if (this.checked) {
+console.log('checked!');
+restaurant.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(restaurant); 
+};
+});  
+$('#loisir').click(function() {
+if (this.checked) {
+console.log('checked!');
+loisir.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(loisir); 
+};
+});  
+$('#hotel').click(function() {
+if (this.checked) {
+console.log('checked!');
+hotel.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(hotel); 
+};
+});  
+$('#fastfood').click(function() {
+if (this.checked) {
+console.log('checked!');
+fastfood.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(fastfood); 
+};
+});   
+$('#embassy').click(function() {
+if (this.checked) {
+console.log('checked!');
+embassy.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(embassy); 
+};
+}); 
+$('#pharmacie').click(function() {
+if (this.checked) {
+console.log('checked!');
+pharmacie.addTo(map);
+} else {
+console.log('unchecked!');
+map.removeLayer(pharmacie); 
+};
+});   
+
+/*var url ="http://192.168.78.148:8090/geoserver/CNCT/wfs?"
+var limite= L.tileLayer.wms(url, {     
+    
+    layers: 'CNCT:TUN_adm1',        
+    format: 'image/png',         transparent: true}).addTo(map);
+ var road_lac= L.tileLayer.wms(url, {     
+    
+    layers: 'CNCT:road_lac',        
+    format: 'image/png',         transparent: true  }).addTo(map);
+
+ var url ="http://192.168.78.148:8090/geoserver/CNCT/wfs?"
+ var road_lac_surf = L.tileLayer.wms(url, {     
+    
+    layers: 'CNCT:road_lac_surf',        
+    format: 'image/png',         transparent: true   }).addTo(map);*/
+
+// pop-up function
+function popUp(f, l) {
+    var out = [];
+    if (f.properties) {
+        for (key in f.properties) {
+            out.push(key + ": " + f.properties[key]);
+        }
+        l.bindPopup(out.join("<br />"));
+    }
+}
+
+
+// add layer to map and layer control
+function add_layer(layr, layr_name) {
+    map.addLayer(layr);
+    layerControl.addOverlay(layr, layr_name);
+}
+
+// fire ajax request
+/*var points = new L.GeoJSON.AJAX("poi.geojson", { onEachFeature: popUp });*/
+/*var styleadm = {
+    "color": "#B0AEAE",
+    "weight": 2,
+    "opacity": 0.8
+}*/
+var adm = new L.GeoJSON.AJAX("adm.geojson", { onEachFeature: popUp});
+var style12 = {
+    "color": "#014462",
+    "weight": 3,
+    "opacity": 1
+}
+var lines12 = new L.GeoJSON.AJAX("osm/road_lac12.geojson", { onEachFeature: popUp, style: style12 }).addTo(map);
+
+var style3 = {
+    "color": "#073D01",
+    "weight": 3,
+    "opacity": 1
+}
+var lines3 = new L.GeoJSON.AJAX("osm/road_lac3.geojson", { onEachFeature: popUp, style: style3 });
+
+var stylem = {
+    "color": "#ffffff",
+    "weight": 1,
+    "opacity": 0.7
+}
+var linesm = new L.GeoJSON.AJAX("osm/road_lac123_m.geojson", { style: stylem });
+
+var stylel = {
+    "color": "#2B2E34",
+    "weight": 15,
+    "opacity": 1
+}
+var linesl = new L.GeoJSON.AJAX("osm/road_lac123_l.geojson", { onEachFeature: popUp, style: stylel });
+var styleB = {
+    "color": "#4E1901",
+    "weight": 2,
+    "opacity": 1
+}
+var stylen = {
+    "color": "#540101",
+    "weight": 3,
+    "opacity": 1
+}
+var building2 = new L.GeoJSON.AJAX("building2.geojson", { onEachFeature: popUp, style: styleB}).addTo(map);
+var localroad2 = new L.GeoJSON.AJAX("localroad2.geojson", { onEachFeature: popUp, style: style12}).addTo(map);
+var principalroad = new L.GeoJSON.AJAX("road.geojson", { onEachFeature: popUp, style: stylen}).addTo(map);
+var trunk = new L.GeoJSON.AJAX("trunk.geojson", { onEachFeature: popUp, style: stylen}).addTo(map);
+/*var linesl = new L.GeoJSON.AJAX("osm/road_lac123_l.geojson", { onEachFeature: function(feature, layer) {
+      name : L.marker(layer.getBounds().getCenter(), {
+      icon: L.divIcon({
+        className: 'name',
+        html: feature.properties.name,
+        iconSize: [100, 40]
+      })
+    }).addTo(map);
+  }
+  , style: stylel });*/
+
+// create empty marker cluster group
+/*var markers = L.markerClusterGroup()
+
+// when geojson is loaded, add points to marker cluster group and add to map & layer control
+points.on('data:loaded', function () {
+    markers.addLayer(points);
+    add_layer(markers, "Point Markers")
+});*/
+
+
+
+   /*coords = []; //define an array to store coordinates
+   onEachFeature: function (feature, layer) {
+             popupOptions = {maxWidth: 200};
+            layer.bindPopup(feature.properties.popupContent);
+            coords.push(feature.geometry.coordinates);
+
+}
+
+var point = turf.point(feature);
+//var buffered = turf.buffer(point, 50);
+//L.geoJSON(buffered).addTo(map);*/
+    
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+//addition of the cafe layer
+    function pointToLayer(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/cafe.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeature(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown cafe";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var cafe = new L.GeoJSON.AJAX("cafe.geojson",{
+      pointToLayer: pointToLayer,
+      onEachFeature: onEachFeature
+    });
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the bank layer
+    function pointToLayerbank(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/bankh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturebank(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown bank";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var bank = new L.GeoJSON.AJAX("bank.geojson",{
+      pointToLayer: pointToLayerbank,
+      onEachFeature: onEachFeaturebank
+    });
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the restaurant layer
+    function pointToLayerrestaurant(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/restauranth.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturerestaurant(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown restaurant";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var restaurant = new L.GeoJSON.AJAX("restaurant.geojson",{
+      pointToLayer: pointToLayerrestaurant,
+      onEachFeature: onEachFeaturerestaurant
+    });
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the hotel layer
+    function pointToLayerhotel(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/hotelh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturehotel(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown hotel";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var hotel = new L.GeoJSON.AJAX("hotel.geojson",{
+      pointToLayer: pointToLayerhotel,
+      onEachFeature: onEachFeaturehotel
+    });
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+/*//addition of the hospital layer
+    function pointToLayerhospital(f,ll){
+       var icon = L.icon({
+         iconSize: [25, 25],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'hospital.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturehospital(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown hospital";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var hospital = new L.GeoJSON.AJAX("hospital.geojson",{
+      pointToLayer: pointToLayerhospital,
+      onEachFeature: onEachFeaturehospital
+    });
+*/
+//////////////////////////////////////////////////////////////////////////////////
+
+//addition of the embassy layer
+    function pointToLayerembassy(f,ll){
+       var icon = L.icon({
+         iconSize: [30, 30],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'embassy.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeatureembassy(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown embassy";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var embassy = new L.GeoJSON.AJAX("embassy.geojson",{
+      pointToLayer: pointToLayerembassy,
+      onEachFeature: onEachFeatureembassy
+    });
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the pharmacie layer
+    function pointToLayerpharmacie(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/pharmacieh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturepharmacie(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown pharmacie";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var pharmacie = new L.GeoJSON.AJAX("pharmacie.geojson",{
+      pointToLayer: pointToLayerpharmacie,
+      onEachFeature: onEachFeaturepharmacie
+    });    
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the fastfood layer
+    function pointToLayerfastfood(f,ll){
+       var icon = L.icon({
+         iconSize: [45, 45],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/fastfoodh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturefastfood(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown fastfood";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var fastfood = new L.GeoJSON.AJAX("fastfood.geojson",{
+      pointToLayer: pointToLayerfastfood,
+      onEachFeature: onEachFeaturefastfood
+    });
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////ZZZZZZZZZZZZOOOOOOOOOOOOOOOOOOOOOOOOOOOMMMMMMMMMMMMMMM//////////////////////////////////////
+
+
+
+//addition of the cafe layer
+    function pointToLayer2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/cafe.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeature2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown cafe";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var cafe2 = new L.GeoJSON.AJAX("osm/zoom/cafe.geojson",{
+      pointToLayer: pointToLayer2,
+      onEachFeature: onEachFeature2
+    });
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the bank layer
+    function pointToLayerbank2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/bankh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturebank2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown bank";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var bank2 = new L.GeoJSON.AJAX("osm/zoom/bank.geojson",{
+      pointToLayer: pointToLayerbank2,
+      onEachFeature: onEachFeaturebank2
+    });
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the restaurant layer
+    function pointToLayerrestaurant2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/restauranth.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturerestaurant2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown restaurant";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var restaurant2 = new L.GeoJSON.AJAX("osm/zoom/restaurant.geojson",{
+      pointToLayer: pointToLayerrestaurant2,
+      onEachFeature: onEachFeaturerestaurant2
+    });
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the hotel layer
+    function pointToLayerhotel2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/hotelh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturehotel2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown hotel";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var hotel2 = new L.GeoJSON.AJAX("osm/zoom/hotel.geojson",{
+      pointToLayer: pointToLayerhotel2,
+      onEachFeature: onEachFeaturehotel2
+    });
+
+////////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the pharmacie layer
+    function pointToLayerpharmacie2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/pharmacieh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturepharmacie2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown pharmacie";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var pharmacie2 = new L.GeoJSON.AJAX("osm/zoom/pharmacie.geojson",{
+      pointToLayer: pointToLayerpharmacie2,
+      onEachFeature: onEachFeaturepharmacie2
+    });    
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+//addition of the fastfood layer
+    function pointToLayerfastfood2(f,ll){
+       var icon = L.icon({
+         iconSize: [70, 70],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/fastfoodh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+    function onEachFeaturefastfood2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown fastfood";
+      }
+      else{
+        var content = f.properties.name;
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent(content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var fastfood2 = new L.GeoJSON.AJAX("osm/zoom/fastfood.geojson",{
+      pointToLayer: pointToLayerfastfood2,
+      onEachFeature: onEachFeaturefastfood2
+    });
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+ 
+ctlEasybutton = L.easyButton('<img src="home.svg">', function(){
+    location.href = "index.html"
+}).addTo(map);
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+// bare de recherche 
+
+      //const searchControl = L.esri.Geocoding.geosearch().addTo(map);
+
+      //const results = L.layerGroup().addTo(map);
+
+      /*let markers = [];
+
+      searchControl.on("results", function (data) {
+        markers = [];
+        console.log("data", data);
+        results.clearLayers();
+        map.setZoom(14);
+        // several results as several towns with same name (like)
+        for (var i = data.results.length - 1; i >= 0; i--) {
+          const result = data.results[i];
+          const marker = L.marker(result.latlng);
+          markers = [...markers, L.marker(marker)];
+          results.addLayer(marker);
+
+          //marker.on("click", results);
+          //console.log("markers", markers);
+        }
+      });*/
+
+     /* function addRadius(marker, radius = 1000) {
+        console.log("marker clicked", marker);
+        const circle = L.circle([marker.latlng.lat, marker.latlng.lng], {
+          radius,
+        });
+        console.log("circle", circle);
+        circle.addTo(map);
+        setTimeout(() => {
+          map.setZoom(15);
+        }, 1000);
+      }*/
+//////////////////////////////////////////////////////////////////////////
+    function pointToLayerloisir(f,ll){
+       var icon = L.icon({
+         iconSize: [55, 55],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/manegeh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+      function onEachFeatureloisir(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.description;
+        var url = f.properties.url;
+        var url2 = ' '+ url + ' ' ;
+
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 300
+        }).setContent("<img src="+url2+"/>"+'<br>'+ content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var loisir = new L.GeoJSON.AJAX("loisir.geojson",{
+      pointToLayer: pointToLayerloisir,
+      onEachFeature: onEachFeatureloisir
+    });
+//////////////////////////////////////////////////////////////////////////////////////////
+
+    function pointToLayerloisir2(f,ll){
+       var icon = L.icon({
+         iconSize: [80, 80],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'placeholde/manegeh.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+      // var image_name = e.target.feature.properties.Img_tif;
+     }
+      function onEachFeatureloisir2(f,l){
+      // debugger;
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.description;
+        var url = f.properties.url;
+        var url2 = ' '+ url + ' ' ;
+
+      }
+
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 300
+        }).setContent("<img src="+url2+"/>"+'<br>'+ content));
+    }
+
+
+    function lineEachFeature(f,l){
+      // debugger;
+    }
+    var loisir2 = new L.GeoJSON.AJAX("osm/loisir.geojson",{
+      pointToLayer: pointToLayerloisir2,
+      onEachFeature: onEachFeatureloisir2
+    });
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    function pointToLayermalta(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/malta.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeaturemalta(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var malta = new L.GeoJSON.AJAX("osm/malta.geojson",{
+      pointToLayer: pointToLayermalta,
+      onEachFeature: onEachFeaturemalta
+    });
+//////////////////
+    function pointToLayercongo(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/congo.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeaturecongo(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var congo = new L.GeoJSON.AJAX("osm/congo.geojson",{
+      pointToLayer: pointToLayercongo,
+      onEachFeature: onEachFeaturecongo
+    });
+   //////////////
+       function pointToLayerindonisya(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/indonisya.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeatureindonisya(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var indonisya = new L.GeoJSON.AJAX("osm/indonisya.geojson",{
+      pointToLayer: pointToLayerindonisya,
+      onEachFeature: onEachFeatureindonisya
+    }); 
+///////////////
+    function pointToLayervenesuela(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/venesuela.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeaturevenesuela(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var venesuela = new L.GeoJSON.AJAX("osm/venesuela.geojson",{
+      pointToLayer: pointToLayervenesuela,
+      onEachFeature: onEachFeaturevenesuela
+    });
+////////////////
+    function pointToLayerfenland(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/fenland.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeaturefenland(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var fenland = new L.GeoJSON.AJAX("osm/fenland.geojson",{
+      pointToLayer: pointToLayerfenland,
+      onEachFeature: onEachFeaturefenland
+    });
+//////////////////
+    function pointToLayersuede(f,ll){
+       var icon = L.icon({
+         iconSize: [37, 27],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'osm/suede.png'
+        });
+      return L.marker(ll,
+                  {
+                    riseOnHover: true,
+                    icon: icon
+                  });
+     }
+      function onEachFeaturesuede(f,l){
+      if (f.properties.name == undefined) {
+        var content = "Unknown";
+      }
+      else{
+        var content = f.properties.name;
+      }
+      l.bindPopup(L.popup({
+          autopan:true,
+          maxWidth: 500
+        }).setContent( content));
+    }
+    function lineEachFeature(f,l){
+    }
+    var suede = new L.GeoJSON.AJAX("osm/suede.geojson",{
+      pointToLayer: pointToLayersuede,
+      onEachFeature: onEachFeaturesuede
+    });
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+L.control.locate().addTo(map);
+
+
+/////////////////////////////////////////////////////////////////////////////////
+
+            var lyrOSM;
+            var lyrWatercolor;
+            var lyrTopo;
+            var lyrImagery;
+            var lyrOutdoors;
+            var mrkCurrentLocation;
+            var fgpDrawnItems;
+            var ctlLayers;
+            var ctlDraw;
+            var objBasemaps;
+            var objOverlays;
+            var easyButton;
+            var lyrvid;
+
+                lyrOSM = L.tileLayer.provider('OpenStreetMap.Mapnik');
+                lyrTopo = L.tileLayer.provider('OpenTopoMap');
+                lyrImagery = L.tileLayer.provider('Esri.WorldImagery');
+                lyrOutdoors = L.tileLayer.provider('Thunderforest.Outdoors');
+                lyrWatercolor = L.tileLayer.provider('Stamen.Watercolor');
+                lyrvid = {'Empty': L.tileLayer('')};
+                //map.addLayer(lyrImagery);
+                
+                fgpDrawnItems = new L.FeatureGroup();
+                fgpDrawnItems.addTo(map);
+objBasemaps = {
+                    "Open Street Maps": lyrOSM,
+                    "Topo Map":lyrTopo,
+                    "Imagery":lyrImagery,
+                    "Outdoors":lyrOutdoors,
+                    "Watercolor":lyrWatercolor,
+                    "None": lyrvid.Empty
+                };
+
+                /*objBasemaps = {
+                    "MAP": img
+                };*/
+                
+                objOverlays = {
+                    //"poi":markers,
+
+                    "<img src='logo/cafe2.png' /> cafe":cafe,
+                    "<img src='logo/bank2.png' /> bank":bank,
+                    "<img src='logo/restaurant2.png' /> restaurant":restaurant,
+                    "<img src='logo/hotel2.png' /> hotel":hotel,
+                    "<img src='logo/pharmacie2.png' /> pharmacy":pharmacie,
+                    //"hospital":hospital,
+                    "<img src='logo/embassy2.png' /> embassy":embassy,
+                    "<img src='logo/fastfood2.png' /> fastfood":fastfood,
+                    "<img src='logo/manege22.png' /> loisir" : loisir,
+
+                    /*"roads_nv1":lines12,
+
+                    "roads_nv2":lines3,
+                    "roads_nv3" : linesm,
+                    "roads_nv4" : linesl,*/
+
+                    "Drawn Items":fgpDrawnItems
+
+                };
+                
+
+
+                ctlSidebar = L.control.sidebar('side-bar').addTo(map);
+                
+                ctlEasybutton = L.easyButton('glyphicon-transfer', function(){
+                   ctlSidebar.toggle(); 
+                }).addTo(map);
+                //L.easyButton('routing', routing());
+                L.easyButton( 'fa-location-arrow', function(){
+                  onclick : routing();
+                }).addTo(map)
+                ctlLayers = L.control.layers(objBasemaps).addTo(map);
+                //ctlLayers = L.control.layers(objBasemaps, objOverlays).addTo(map);
+
+                ctlScale = L.control.scale({position:'bottomleft', metric:false, maxWidth:200}).addTo(map);
+
+                ctlMouseposition = L.control.mousePosition().addTo(map);
+                
+                ctlStyle = L.control.styleEditor({position:'topright'}).addTo(map);
+                ctlMeasure = L.control.polylineMeasure().addTo(map);
+
+                /*ctlLegend = new L.Control.Legend({
+                    position:'topright',
+                    controlButton:{title:"Legend"}
+                }).addTo(map);
+                
+                $(".legend-container").append($("#legend"));
+                $(".legend-toggle").append($("<i class='legend-toggle-icon fa fa-server fa-2x' style='color:#000'></i>"));*/
+
+                // **********  Setup Draw Control ****************
+                
+                ctlDraw = new L.Control.Draw({
+                    draw:{
+                        circle:true,
+                        rectangle:true,
+                    },
+                    edit:{
+                        featureGroup:fgpDrawnItems
+                    }
+                });
+                ctlDraw.addTo(map);
+                
+                map.on('draw:created', function(e){
+                    fgpDrawnItems.addLayer(e.layer);
+                });
+                
+                // ************ Location Events **************
+                
+                /*map.on('locationfound', function(e) {
+                    console.log(e);
+                    if (mrkCurrentLocation) {
+                        mrkCurrentLocation.remove();
+                    }
+                    mrkCurrentLocation = L.circle(e.latlng, {radius:e.accuracy/2}).addTo(map);
+                    map.setView(e.latlng, 14);
+                });
+                
+                map.on('locationerror', function(e) {
+                    console.log(e);
+                    alert("Location was not found");
+                })*/
+
+
+
+                //  *********  jQuery Event Handlers  ************
+            
+            /*$("#btnLocate").click(function(){
+                map.locate();
+            });*/
+
+            /*$("#btnShowLegend").click(function(){
+            $("#legend").toggle();
+            });*/
+            map.on('zoomend', function(){
+            $("#zoom-level").html(map.getZoom());
+                });
+                
+                map.on('moveend', function(){
+                    $("#map-center").html(LatLngToArrayString(map.getCenter()));
+                });
+               
+
+            
+            //  ***********  General Functions *********
+            
+            function LatLngToArrayString(ll) {
+                return "["+ll.lat.toFixed(5)+", "+ll.lng.toFixed(5)+"]";
+            }
+            
+            function returnLayerByAttribute(lyr,att,val) {
+                var arLayers = lyr.getLayers();
+                for (i=0;i<arLayers.length-1;i++) {
+                    var ftrVal = arLayers[i].feature.properties[att];
+                    if (ftrVal==val) {
+                        return arLayers[i];
+                    }
+                }
+                return false;
+            }
+            
+            function testLayerAttribute(ar, val, att, fg, err, btn) {
+                if (ar.indexOf(val)<0) {
+                    $(fg).addClass("has-error");
+                    $(err).html("**** "+att+" NOT FOUND ****");
+                    $(btn).attr("disabled", true);
+                } else {
+                    $(fg).removeClass("has-error");
+                    $(err).html("");
+                    $(btn).attr("disabled", false);
+                }
+            }
+                
+    function routing(){
+
+      var routing = L.Routing.control({
+        waypoints: [
+        L.latLng(36.83488,10.23896),
+        L.latLng(36.83488,10.23896)
+        ]
+      })
+      routing.addTo(map);
+    }
+description = "Tunisia Happy land park, connu par le terme familier de Dah Dah, situé aux berges du lac du Tunis, est un très grand espace de loisir, bâti sur une superficie de 11 hectares, qui vous propose plus de 200 jeux destinés aux enfants, aux adolescents et même aux adultes. Le parc vous offre une très grande diversité de distractions."
+
+description2 = "Carthage Land Tunis a été érigé sur 30.000 m2 et propose des activités diversifiées: un parc aquatique avec des jeux et manèges externes, un espace réservé aux plus petits où des animateurs s'occupent des enfants, un cinéma 7D qui transporte les spectateurs à l'intérieur du grand écran, en stimulant les 5 sens et les sensations de l'environnement et en instaurant une interaction entre l'homme et la machine. Une galerie commerciale avec des restaurants et des boutiques permet aux visiteurs de joindre l'utile à l'agréable en faisant du shopping."
+
+
+
+
+
+
+
+/*var icon = L.icon({
+         iconSize: [80, 80],
+         iconAnchor: [10, 10],
+         popupAnchor:  [1, -24],
+         iconUrl: 'manege2.png'
+        });
+
+
+var marker1 = L.marker([36.83206, 10.22695],{
+                    riseOnHover: true,
+                    icon : icon
+                  });
+marker1.bindPopup( '<img src="dahdah.png"/>'+'<br>'+'<br>'+ description);
+
+var marker2 = L.marker([36.83154, 10.22446],{
+                    riseOnHover: true,
+                    icon: icon
+                  });
+marker2.bindPopup( '<img src="land.jpg"/>'+'<br>'+'<br>'+ description2);*/
+
+
+
+
+
+
+map.on('zoomend', function (e) {
+    zoom_based_layerchange();
+});
+
+function clean_map() {
+    map.eachLayer(function (layer) {
+        if (layer instanceof L.GeoJSON)
+
+
+        {
+            map.removeLayer(layer);
+
+        }
+        //console.log(layer);
+
+
+    });
+}
+
+
+
+function zoom_based_layerchange() {
+    //console.log(map.getZoom());
+
+var currentZoom = map.getZoom();
+    switch (currentZoom) {
+        /*-case 8:
+            clean_map();
+            lines1.addTo(map);
+            lines2.addTo(map);
+            break;*/
+        //case 7:
+          //  clean_map();
+
+            //buslayer.addTo(map); //show Busline
+            //break;
+        case 12:
+            clean_map();
+            adm.addTo(map);
+            principalroad.addTo(map);
+            //localroad2.addTo(map);
+            trunk.addTo(map);
+            // show Campus
+            break;
+        case 13:
+            clean_map();
+            adm.addTo(map);
+            principalroad.addTo(map);
+            localroad2.addTo(map);
+            trunk.addTo(map);
+            // show Campus
+            break;
+        case 14:
+            clean_map();
+            lines12.addTo(map);
+            building2.addTo(map);
+            
+            adm.addTo(map);
+            principalroad.addTo(map);
+            localroad2.addTo(map);
+            trunk.addTo(map);            
+            // show Campus
+            break;
+        case 16:
+            clean_map();
+            trunk.addTo(map);
+            lines12.addTo(map);
+            building2.addTo(map);
+            lines3.addTo(map);
+            loisir.addTo(map);
+            
+            // show Campus
+            break;
+        case 15:
+            clean_map();
+
+            lines12.addTo(map);
+            building2.addTo(map);
+            localroad2.addTo(map);
+            principalroad.addTo(map);
+            trunk.addTo(map);
+            
+            // show rental
+            break;
+        case 17:
+            clean_map();
+
+            linesl.addTo(map);
+            linesm.addTo(map);
+            cafe.addTo(map);
+            pharmacie.addTo(map);
+            restaurant.addTo(map);
+            embassy.addTo(map);
+            fastfood.addTo(map);
+            hotel.addTo(map);
+            bank.addTo(map);
+            loisir.addTo(map);
+            building2.addTo(map);
+
+            
+            // show rental
+            break;
+          case 18:
+            map.removeLayer(embassy);
+            map.removeLayer(loisir);
+            map.removeLayer(cafe);
+            map.removeLayer(pharmacie);
+            map.removeLayer(restaurant);
+            map.removeLayer(hotel);
+            map.removeLayer(fastfood);
+            map.removeLayer(bank);
+
+            malta.addTo(map);
+            congo.addTo(map);
+            venesuela.addTo(map);
+            indonisya.addTo(map);
+            fenland.addTo(map);
+            suede.addTo(map);
+            loisir2.addTo(map);
+            cafe2.addTo(map);
+            pharmacie2.addTo(map);
+            restaurant2.addTo(map);
+            fastfood2.addTo(map);
+            hotel2.addTo(map);
+            bank2.addTo(map);
+            building2.addTo(map);
+
+          break;
+        case 16:
+            clean_map();
+            lines12.addTo(map);
+            lines3.addTo(map);
+            building2.addTo(map);
+
+            
+            // show rental
+            break;
+
+        default:
+            // do nothing
+            break;
+    }
+}
+
+
+
+</script>
+</body>
+</html>
