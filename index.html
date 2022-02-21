@@ -1395,7 +1395,7 @@ L.control.locate().addTo(map);
                 lyrOutdoors = L.tileLayer.provider('Thunderforest.Outdoors');
                 lyrWatercolor = L.tileLayer.provider('Stamen.Watercolor');
                 lyrvid = {'Empty': L.tileLayer('')};
-                //map.addLayer(lyrImagery);
+                map.addLayer(lyrImagery);
                 
                 fgpDrawnItems = new L.FeatureGroup();
                 fgpDrawnItems.addTo(map);
@@ -1640,7 +1640,7 @@ var currentZoom = map.getZoom();
             break;
         case 13:
             clean_map();
-            adm.addTo(map);
+            //adm.addTo(map);
             //principalroad.addTo(map);
             //localroad2.addTo(map);
             trunk.addTo(map);
@@ -1651,7 +1651,7 @@ var currentZoom = map.getZoom();
             lines12.addTo(map);
             building2.addTo(map);
             
-            adm.addTo(map);
+            //adm.addTo(map);
             //principalroad.addTo(map);
             //localroad2.addTo(map);
             trunk.addTo(map);            
