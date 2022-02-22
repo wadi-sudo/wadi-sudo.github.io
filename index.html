@@ -413,7 +413,7 @@ var stylen = {
     "weight": 3,
     "opacity": 1
 }
-var building2 = new L.GeoJSON.AJAX("building2.geojson", { onEachFeature: popUp, style: styleB}).addTo(map);
+var building2 = new L.GeoJSON.AJAX("building2.geojson", { onEachFeature: popUp, style: styleB});
 var localroad2 = new L.GeoJSON.AJAX("localroad2.geojson", { onEachFeature: popUp, style: style12}).addTo(map);
 var principalroad = new L.GeoJSON.AJAX("road.geojson", { onEachFeature: popUp, style: stylen}).addTo(map);
 var trunk = new L.GeoJSON.AJAX("trunk.geojson", { onEachFeature: popUp, style: stylen}).addTo(map);
