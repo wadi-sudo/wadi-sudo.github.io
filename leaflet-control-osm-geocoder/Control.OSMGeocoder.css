@@ -7,9 +7,9 @@
 .leaflet-control-geocoder {
 	box-shadow: 0 1px 7px #999;
 	background: #f8f8f9;
-	-moz-border-radius: 8px;
-	-webkit-border-radius: 8px;
-	border-radius: 8px;
+	-moz-border-radius: 9px;
+	-webkit-border-radius: 9px;
+	border-radius: 10px;
 }
 
 .leaflet-control-geocoder a {
@@ -19,8 +19,8 @@
 }
 
 .leaflet-touch .leaflet-control-geocoder a {
-	width: 34px;
-	height: 34px;
+	width: 31px;
+	height: 31px;
 }
 
 .leaflet-control-geocoder .leaflet-control-geocoder-form,
@@ -34,5 +34,5 @@
 }
 
 .leaflet-control-geocoder-expanded .leaflet-control-geocoder-form {
-	padding: 5px;
+	padding: 6px;
 }
