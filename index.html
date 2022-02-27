@@ -255,13 +255,18 @@ body {
   display: none;
 }
 }
-        .text-labels {
-            font-size: 1em;
-            font-weight: 200;
-            color: white;
+path.leaflet-interactive.animate {
+    stroke-dasharray: 1920;
+    stroke-dashoffset: 1920;
+    animation: dash 8s linear 1s forwards;
+}
 
-                       /* Use color, background, set margins for offset, etc */
-        }
+@keyframes dash {
+    to {
+        stroke-dashoffset: 0;
+
+    }
+}
 
 
 </style>
@@ -1585,11 +1590,11 @@ L.control.locate().addTo(map);
                 fgpDrawnItems = new L.FeatureGroup();
                 fgpDrawnItems.addTo(map);
 objBasemaps = {
-                    "Open Street Maps": lyrOSM,
-                    "Topo Map":lyrTopo,
+                    //"Open Street Maps": lyrOSM,
+                    //"Topo Map":lyrTopo,
                     "Imagery":lyrImagery,
-                    "Outdoors":lyrOutdoors,
-                    "Watercolor":lyrWatercolor,
+                    //"Outdoors":lyrOutdoors,
+                    //"Watercolor":lyrWatercolor,
                     "None": lyrvid.Empty
                 };
 
@@ -1623,7 +1628,7 @@ objBasemaps = {
 function sidebarreturn(){
                    ctlSidebar.toggle(); 
                 }
-
+ctlLayers = L.control.layers(null, objBasemaps, {position:'topleft'}).addTo(map);
                 ctlSidebar = L.control.sidebar('side-bar').addTo(map);
                 
                 ctlEasybutton = L.easyButton('glyphicon-transfer', function(){
@@ -1634,7 +1639,7 @@ function sidebarreturn(){
                   onclick : routing();
                 }).addTo(map)
 
-                ctlLayers = L.control.layers(objBasemaps).addTo(map);
+                
                 //var opacity = L.control.opacity(objBasemaps, {label: 'Base Map Opacity'}).addTo(map);
                 //ctlLayers = L.control.layers(objBasemaps, objOverlays).addTo(map);
 
@@ -1745,7 +1750,11 @@ var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'})
         waypoints: [
         L.latLng(36.83488,10.23896),
         L.latLng(36.83488,10.23896)
-        ]
+        ],
+    lineOptions: {
+        styles: [{className: 'animate'}] // Adding animate class
+    },
+    routeWhileDragging: true
       })
       routing.addTo(map);
     }
