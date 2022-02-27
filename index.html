@@ -1558,7 +1558,7 @@ ctlEasybutton = L.easyButton('<img src="home.svg">', function(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-L.control.locate().addTo(map);
+
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -1634,6 +1634,7 @@ ctlLayers = L.control.layers(null, objBasemaps, {position:'topleft'}).addTo(map)
                 ctlEasybutton = L.easyButton('glyphicon-transfer', function(){
                    ctlSidebar.toggle(); 
                 }).addTo(map);
+        L.control.locate().addTo(map);
                 //L.easyButton('routing', routing());
                 L.easyButton( 'fa-location-arrow', function(){
                   onclick : routing();
