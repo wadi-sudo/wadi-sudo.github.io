@@ -1634,6 +1634,9 @@ ctlLayers = L.control.layers(null, objBasemaps, {position:'topleft'}).addTo(map)
                 ctlEasybutton = L.easyButton('glyphicon-transfer', function(){
                    ctlSidebar.toggle(); 
                 }).addTo(map);
+        var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'});
+
+    map.addControl(osmGeocoder);
         L.control.locate().addTo(map);
                 //L.easyButton('routing', routing());
                 L.easyButton( 'fa-location-arrow', function(){
@@ -1651,9 +1654,7 @@ ctlLayers = L.control.layers(null, objBasemaps, {position:'topleft'}).addTo(map)
                 
                 /*ctlStyle = L.control.styleEditor({position:'topleft'}).addTo(map);*/
                 ctlMeasure = L.control.polylineMeasure().addTo(map);
-var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'});
 
-    map.addControl(osmGeocoder);
                 /*ctlLegend = new L.Control.Legend({
                     position:'topright',
                     controlButton:{title:"Legend"}
