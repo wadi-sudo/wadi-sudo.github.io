@@ -282,6 +282,11 @@ var map = L.map('map',{
   opacity: 0.8,
   minZoom : 15
 });
+           var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'});
+
+    map.addControl(osmGeocoder);     
+        
+        
 L.control.slideMenu('<h3 style="text-align: center; "> <b>  leisure</h3><hr> <h4 style="color: #0066ff; "> &nbsp &nbsp<b>  Dahdah</h4> </br> &nbsp &nbsp &nbsp<img src="dahdah.png" width="250" height="200" onclick="map.setView([36.83206, 10.22695], zoom=18)"></br> <p>&nbsp &nbsp Tunisia Happy land park est un très grand espace de loisir, le parc vous offre une très grande diversité de distractions. </p> </br><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b> Carthage Land</h4> </br> &nbsp &nbsp &nbsp<img src="land.jpg" width="250" height="200" onclick="map.setView([36.83167, 10.22434], zoom=18)"> </br><p>&nbsp &nbsp Un parc aquatique avec des jeux et manèges externes, un espace réservé aux plus petits.</p><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b> Bateaux </h4> </br> &nbsp &nbsp &nbsp<img src="bateau.jpg" width="250" height="200" onclick="map.setView([36.83038, 10.22547], zoom=18)"></br><p>&nbsp &nbsp Les bateaux du lac</p><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b>  Bowling</h4> </br> &nbsp &nbsp &nbsp<img src="bowling.jpg" width="250" height="200" onclick="map.setView([36.83155, 10.21606], zoom=18)"><p>&nbsp &nbsp Bowling du lac </p><hr>').addTo(map);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //var osmb = new OSMBuildings(map).load();
@@ -1630,20 +1635,18 @@ objBasemaps = {
 function sidebarreturn(){
                    ctlSidebar.toggle(); 
                 }
-ctlLayers = L.control.layers(null, objBasemaps, {position:'topleft'}).addTo(map);
+ctlLayers = L.control.layers(objBasemaps, null, {position:'topleft'}).addTo(map);
                 ctlSidebar = L.control.sidebar('side-bar').addTo(map);
                 
                 ctlEasybutton = L.easyButton('glyphicon-transfer', function(){
                    ctlSidebar.toggle(); 
                 }).addTo(map);
-        var osmGeocoder = new L.Control.OSMGeocoder({placeholder: 'Search location...'});
 
-    map.addControl(osmGeocoder);
-        L.control.locate().addTo(map);
+        L.control.locate({position:"topright"}).addTo(map);
                 //L.easyButton('routing', routing());
                 L.easyButton( 'fa-location-arrow', function(){
                   onclick : routing();
-                }).addTo(map)
+                }).setPosition('topright').addTo(map)
 
                 
                 //var opacity = L.control.opacity(objBasemaps, {label: 'Base Map Opacity'}).addTo(map);
