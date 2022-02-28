@@ -1,0 +1,11 @@
+{
+"type": "FeatureCollection",
+"name": "loisir",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "name": "DahDah","description": "Tunisia Happy land park, connu par le terme familier de Dah Dah, situé aux berges du lac du Tunis, est un très grand espace de loisir, bâti sur une superficie de 11 hectares, qui vous propose plus de 200 jeux destinés aux enfants, aux adolescents et même aux adultes. Le parc vous offre une très grande diversité de distractions.", "url" : "dahdah.png" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.22695, 36.83206 ] ] } },
+{ "type": "Feature", "properties": { "name": "Carthage Land", "description": "Carthage Land Tunis a été érigé sur 30.000 m2 et propose des activités diversifiées: un parc aquatique avec des jeux et manèges externes, un espace réservé aux plus petits où des animateurs s'occupent des enfants, un cinéma 7D qui transporte les spectateurs à l'intérieur du grand écran, en stimulant les 5 sens et les sensations de l'environnement et en instaurant une interaction entre l'homme et la machine. Une galerie commerciale avec des restaurants et des boutiques permet aux visiteurs de joindre l'utile à l'agréable en faisant du shopping.", "url" : "land.jpg" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.22434, 36.83167 ] ] } },
+{ "type": "Feature", "properties": { "name": "bateau lac", "description": "les bateaux du lac", "url" : "bateau.jpg" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.22547, 36.83038 ] ] } },
+{ "type": "Feature", "properties": { "name": "Bowling lac", "description": "Bowling lac", "url" : "bowling.jpg" }, "geometry": { "type": "MultiPoint", "coordinates": [ [ 10.21606, 36.83155 ] ] } }
+]
+}
