@@ -205,7 +205,15 @@
 </div>
 
 </div>
-
+<div id="overlay"></div>
+<div id="popup">
+    <div class="popupcontrols">
+        <span id="popupclose">X</span>
+    </div>
+    <div class="popupcontent">
+      <a href="#"><img id="navlogo" src="cnct2.png" alt="logo"></a>
+        <h1 style="text-align: center;">TUNIS, LAC 1</h1>
+    </div>
 <style type="text/css">
 .navbar-inverse {
 
@@ -218,7 +226,8 @@
    height: 52px;
    float:center;
    position:absolute;
-   margin-left: 39%;
+   margin-left: 4%;
+   margin-top: 3%;
    margin-bottom: 0.5%;
 
 }
@@ -269,7 +278,40 @@ path.leaflet-interactive.animate {
 
     }
 }
+ #overlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #999;
+    width: 100%;
+    height: 100%;
+    opacity: 0.7;
+    z-index: 3000;
+  }
 
+  #popup {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: #fff;
+    width: 500px;
+    height: 500px;
+    margin-left: -250px; /*Half the value of width to center div*/
+    margin-top: -250px; /*Half the value of height to center div*/
+    z-index: 3000;
+  }
+
+  #popupclose {
+    float: right;
+    padding: 10px;
+    cursor: pointer;
+  }
+
+  .popupcontent {
+    padding: 10px;
+  }
 
 </style>
 <script>
@@ -1648,7 +1690,24 @@ ctlLayers = L.control.layers(objBasemaps, null, {position:'topleft'}).addTo(map)
                   onclick : routing();
                 }).setPosition('topright').addTo(map)
 
-                
+                      // Initialize Variables
+  var closePopup = document.getElementById("popupclose");
+  var overlay = document.getElementById("overlay");
+  var popup = document.getElementById("popup");
+  
+  // Close Popup Event
+  closePopup.onclick = function() {
+    overlay.style.display = 'none';
+    popup.style.display = 'none';
+  };
+  // Show Overlay and Popup
+function show() {
+    overlay.style.display = 'block';
+    popup.style.display = 'block';
+  }
+      L.easyButton('fa fa-tags', function(){
+    onclick : show(); 
+}).addTo(map);
                 //var opacity = L.control.opacity(objBasemaps, {label: 'Base Map Opacity'}).addTo(map);
                 //ctlLayers = L.control.layers(objBasemaps, objOverlays).addTo(map);
 
