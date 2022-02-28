@@ -99,6 +99,8 @@
   <script src="src/Leaflet.TextPath.js"></script>
   <script src="src/Control.MiniMap.js"></script>
    <link rel="stylesheet" href="src/Control.MiniMap.css" />
+          <link rel="stylesheet" href="src/L.Control.SlideMenu.css" />
+<script src="src/L.Control.SlideMenu.js"></script>
   <!--<script src='https://cdn.osmbuildings.org/Leaflet.draw/0.2.0/leaflet.draw.js'></script>-->
 <!--<script
       src="https://unpkg.com/esri-leaflet@2.3.3/dist/esri-leaflet.js"
@@ -280,7 +282,7 @@ var map = L.map('map',{
   opacity: 0.8,
   minZoom : 15
 });
-
+L.control.slideMenu('<h3 style="text-align: center; "> <b>  leisure</h3><hr> <h4 style="color: #0066ff; "> &nbsp &nbsp<b>  Dahdah</h4> </br> &nbsp &nbsp &nbsp<img src="dahdah.png" width="250" height="200" onclick="map.setView([36.83206, 10.22695], zoom=18)"></br> <p>&nbsp &nbsp Tunisia Happy land park est un très grand espace de loisir, le parc vous offre une très grande diversité de distractions. </p> </br><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b> Carthage Land</h4> </br> &nbsp &nbsp &nbsp<img src="land.jpg" width="250" height="200" onclick="map.setView([36.83167, 10.22434], zoom=18)"> </br><p>&nbsp &nbsp Un parc aquatique avec des jeux et manèges externes, un espace réservé aux plus petits.</p><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b> Bateaux </h4> </br> &nbsp &nbsp &nbsp<img src="bateau.jpg" width="250" height="200" onclick="map.setView([36.83038, 10.22547], zoom=18)"></br><p>&nbsp &nbsp Les bateaux du lac</p><hr><h4 style="color: #0066ff; "> &nbsp &nbsp<b>  Bowling</h4> </br> &nbsp &nbsp &nbsp<img src="bowling.jpg" width="250" height="200" onclick="map.setView([36.83155, 10.21606], zoom=18)"><p>&nbsp &nbsp Bowling du lac </p><hr>').addTo(map);
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //var osmb = new OSMBuildings(map).load();
 //osmb.style({ wallColor: 'rgba(92,92,92,170)', roofColor: 'rgba(251,253,190,170)', shadows: 'rgb(0,0,0)' });
