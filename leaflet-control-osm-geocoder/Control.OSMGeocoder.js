@@ -6,7 +6,7 @@ if (typeof console == "undefined") {
 L.Control.OSMGeocoder = L.Control.extend({
 	options: {
 		collapsed: true,
-		position: 'topleft',
+		position: 'topright',
 		text: 'Locate',
 		placeholder: '',
 		bounds: null, // L.LatLngBounds
