@@ -60,25 +60,25 @@
           border: 0; } }
   @media (min-width: 768px) and (max-width: 991px) {
     .leaflet-sidebar {
-      width: 105px; }
+      width: 305px; }
       .leaflet-sidebar.left.visible ~ .leaflet-left {
-        left: 105px; }
+        left: 305px; }
       .leaflet-sidebar.right.visible ~ .leaflet-right {
-        right: 105px; } }
+        right: 305px; } }
   @media (min-width: 992px) and (max-width: 1199px) {
     .leaflet-sidebar {
-      width: 190px; }
+      width: 390px; }
       .leaflet-sidebar.left.visible ~ .leaflet-left {
-        left: 190px; }
+        left: 390px; }
       .leaflet-sidebar.right.visible ~ .leaflet-right {
-        right: 190px; } }
+        right: 390px; } }
   @media (min-width: 1200px) {
     .leaflet-sidebar {
-      width: 260px; }
+      width: 360px; }
       .leaflet-sidebar.left.visible ~ .leaflet-left {
-        left: 260px; }
+        left: 360px; }
       .leaflet-sidebar.right.visible ~ .leaflet-right {
-        right: 260px; } }
+        right: 360px; } }
   .leaflet-sidebar .close {
     position: absolute;
     right: 20px;
