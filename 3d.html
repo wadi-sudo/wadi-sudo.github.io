@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>GIS</title>
+<link rel="icon" href="logo2.png" sizes="16x16" type="image/png">
+  <meta charset="utf-8">
+  <!-- Include the CesiumJS JavaScript and CSS files -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.90/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.90/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <style type="text/css">
+    #toggle-building { z-index: 1; position: fixed; top: 8px; left: 8px; }
+    body { 
+    	width: 100%;
+    	height: 100%;
+     }
+  </style>
+</head>
+<body>
+  <div id="cesiumContainer"></div>
+  <a href="index.html"><button id="toggle-building" class="btn btn-secondary">Back</button></a>
+  <script>
+    // Your access token can be found at: https://cesium.com/ion/tokens.
+    // Replace `your_access_token` with your Cesium ion access token.
+
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4Mzk1ZDk1Yy0yZGMxLTQ2MmMtYmI3NS1iMTU3ZGEzZjhjYTciLCJpZCI6ODQxOTksImlhdCI6MTY0NjE1Mjg2N30.zVQGaIvKxva8XuJVAkfH-XHe9hsV5z6UW-zWD-1pt8k';
+
+    // Initialize the Cesium Viewer in the HTML element with the `cesiumContainer` ID.
+    const viewer = new Cesium.Viewer('cesiumContainer', {
+      terrainProvider: Cesium.createWorldTerrain()
+    });    
+    // Add Cesium OSM Buildings, a global 3D buildings layer.
+     
+    // Fly the camera to San Francisco at the given longitude, latitude, and height.
+    viewer.camera.flyTo({
+      destination : Cesium.Cartesian3.fromDegrees(10.23, 36.82, 400),
+      orientation : {
+        heading : Cesium.Math.toRadians(0.0),
+        pitch : Cesium.Math.toRadians(-15.0),
+      }
+    });
+
+//  
+/*async function addBuildingGeoJSON() {
+  // Load the GeoJSON file from Cesium ion.
+  const geoJSONURL = await Cesium.IonResource.fromAssetId(855498);
+  // Create the geometry from the GeoJSON, and clamp it to the ground.
+  const geoJSON = await Cesium.GeoJsonDataSource.load(geoJSONURL, { clampToGround: true });
+  // Add it to the scene.
+  const dataSource = await viewer.dataSources.add(geoJSON);
+  // By default, polygons in CesiumJS will be draped over all 3D content in the scene.
+  // Modify the polygons so that this draping only applies to the terrain, not 3D buildings.
+  for (const entity of dataSource.entities.values) {
+    entity.polygon.classificationType = Cesium.ClassificationType.TERRAIN;
+  }
+  // Move the camera so that the polygon is in view.
+  viewer.flyTo(dataSource);
+}
+addBuildingGeoJSON();*/
+var buildingTileset = viewer.scene.primitives.add(Cesium.createOsmBuildings());
+
+
+buildingTileset.style = new Cesium.Cesium3DTileStyle({
+  color: {
+    conditions: [
+      ["${building} === 'house'", "color('rgb(255,58,0)')"],
+      ["${building} === 'apartments'", "color('rgb(255,58,0)')"],
+      ["${building} === 'residential'", "color('rgb(255,58,0)')"],
+      ["${building} === 'yes'", "color('rgb(163,126,0)')"],
+      ["${building} === 'office'", "color('rgb(112,4,3)')"],
+      ["${building} === 'hospital'", "color('rgb(24,87,0)')"],
+      ["${building} === 'clinic'", "color('rgb(24,87,0)')"],
+      ["${building} === 'hotel'", "color('rgb(254, 85, 210)')"],
+      ["${building} === 'mosque'", "color('rgb(112, 218, 135)')"],
+      ["${building} === 'commercial'", "color('rgb(0, 40, 255)')"],
+      ["${building} === 'industrial'", "color('rgb(0, 40, 255)')"],
+      ["${building} === 'government'", "color('rgb(38, 66, 85)')"],
+      ["true", "color('white')"],
+    ],
+  },
+});
+
+
+  </script>
+ </div>
+</body>
+</html>
