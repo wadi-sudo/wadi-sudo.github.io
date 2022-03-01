@@ -1708,6 +1708,12 @@ function show() {
       L.easyButton('fa fa-tags', function(){
     onclick : show(); 
 }).addTo(map);*/
+        function view(){
+  location.href = "3d.html";
+}
+      L.easyButton('fa fa-cube', function(){
+    onclick : view(); 
+}).addTo(map);
                 //var opacity = L.control.opacity(objBasemaps, {label: 'Base Map Opacity'}).addTo(map);
                 //ctlLayers = L.control.layers(objBasemaps, objOverlays).addTo(map);
 
