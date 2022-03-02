@@ -619,7 +619,7 @@ var stylefinal1 = {
 
 var linesm = new L.GeoJSON.AJAX("osm/road_lac123_m.geojson", { style: stylem });
 var linesfinal1 = new L.GeoJSON.AJAX("osm/road_lac123_m.geojson", { onEachFeature: function (feature, layer) {
-            layer.setText(feature.properties.name,  {offset : 25,center: true, attributes: {fill: 'white', 'font-weight': 'bold',
+            layer.setText(feature.properties.name,  {offset : 25,center: true, attributes: {fill: 'black', /*'font-weight': 'bold',*/
               'font-size': '15'}});
 
         }, style: stylefinal1 });
@@ -1993,10 +1993,10 @@ poi_surf.addTo(map);
             map.removeLayer(hotel);
             map.removeLayer(fastfood);
             map.removeLayer(bank);
-            map.removeLayer(linesfinal2);
+            map.removeLayer(linesfinal1);
             map.removeLayer(linesl);
             map.removeLayer(linesm);
-linesfinal1.addTo(map);
+linesfinal2.addTo(map);
     linesl.addTo(map);
             linesm.addTo(map);
             malta.addTo(map);
@@ -2017,7 +2017,18 @@ linesfinal1.addTo(map);
             //building2.addTo(map);
 
           break;
+        case 19:
+            map.removeLayer(linesfinal2);
+            map.removeLayer(linesl);
+            map.removeLayer(linesm);
+linesfinal1.addTo(map);
+    linesl.addTo(map);
+            linesm.addTo(map);
+            
+            //toponymie.addTo(map);
+            //building2.addTo(map);
 
+          break;
         case 16:
             clean_map();
             //map.removeLayer(toponymie);
