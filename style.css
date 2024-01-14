@@ -1,0 +1,473 @@
+ html,
+ body {
+     height: 100%;
+     padding: 0;
+     margin: 0;
+     font-family: arial;
+
+ }
+
+ #map {
+     position: absolute;
+     left: 0%;
+     width: 100%;
+     height: 50%;
+     border-style: solid;
+     border-color: black;
+     border-width: thin;
+	 z-index: 0;
+
+ }
+
+ #query_tab {
+     position: absolute;
+     padding: 0.5% 0%;
+     left: 7%;
+     width: 100%;
+     height: 100%;
+     //border-style: solid;
+     //border-color: black;
+     //border-width: thin;
+     /*visibility: hidden;*/
+     //overflow: scroll;
+
+ }
+  #query_tab2 {
+     position: absolute;
+     padding: 0.5% 0%;
+     left: 7%;
+     width: 100%;
+     height: 100%;
+     //border-style: solid;
+     //border-color: black;
+     //border-width: thin;
+     /*visibility: hidden;*/
+     //overflow: scroll;
+
+ }
+
+ #legend {
+     z-index: 11;
+     padding: 2px 4px;
+     border: 1px solid grey;
+     position: absolute;
+     bottom: 8%;
+     height: 0%;
+     overflow: scroll;
+     width: 0%;
+     right: 0%;
+     z-index: 9999;
+     background-color: #ffffff;
+     font-weight: bold;
+     visibility: hidden;
+
+ }
+
+ #layer {
+     position: relative;
+     width: 70%;
+ }
+#layer2 {
+     position: relative;
+     width: 70%;
+ }
+ #attributes {
+     position: relative;
+     width: 70%;
+ }
+
+ #operator {
+     position: relative;
+     width: 70%;
+ }
+
+ #value {
+     position: relative;
+     width: 70%;
+ }
+  #value2 {
+     position: relative;
+     width: 70%;
+ }
+
+ #table_data {
+     position: absolute;
+     bottom: 0%;
+     overflow: scroll;
+     left: 0%;
+     right: 0%;
+     height: 0%;
+     border: 1px solid #4CAF50;
+ }
+
+ #table {
+     white-space: nowrap;
+     grid-template-areas: "head-fixed""body-scrollable";
+ }
+
+
+ #table th {
+     position: -webkit-sticky;
+     /* for Safari */
+     position: sticky;
+     top: 0px;
+     background-color: rgb(122, 209, 100);
+ }
+
+ #wms_layers_btn {
+     position: absolute;
+     z-index: 6000;
+     /*top: 1%;*/
+     left: 28%;
+ }
+
+ #query_panel_btn {
+     position: absolute;
+     z-index: 6000;
+     /*top: 1%;*/
+     left: 32%;
+ }
+
+ #legend_btn {
+     position: absolute;
+     z-index: 6000;
+     bottom: 3%;
+     right: 0%;
+     
+ }
+
+#table_wms_layers{
+     white-space: nowrap;
+     grid-template-areas: "head-fixed""body-scrollable";
+ }
+ 
+ #table_wms_layers th {
+     position: -webkit-sticky;
+     /* for Safari */
+     position: sticky;
+     top: 0px;
+     background-color: rgb(122, 209, 100);
+ }
+
+ .modal-dialog {
+     max-width: 60% !important;
+     height: 60% !important;
+     top: 18% !important;
+
+
+ }
+
+ .form-select {
+     left: 0%;
+     width: 85% !important;
+
+ }
+
+ .form-control {
+     left: 0%;
+     width: 85% !important;
+
+ }
+
+ .leaflet-popup-content {
+     width: auto !important;
+ }
+
+ #clear_btn {
+     position: absolute;
+     z-index: 5000;
+     top: 1%;
+     left: 50%;
+
+ }
+
+ #info_btn {
+     position: absolute;
+     z-index: 5000;
+     /*top: 1%;*/
+     left: 34%;
+
+ }
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
+.layersDiv {
+    position: absolute;
+
+    margin: 65px auto auto 45px;
+    width: 250px;
+
+    background-color: rgba(255, 255, 255, 0.8);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+    line-height: 1.45;
+    border-radius: 2px;
+    border: 1px solid #d1d1d1;
+    box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.5);
+
+}
+
+
+
+
+
+.attQueryDiv {
+    position: absolute;
+  
+    top: 10px;
+    left: 45px;
+
+    width: 250px;
+
+    background-color: rgba(255, 255, 255, 0.9);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+    line-height: 1.45;
+    border-radius: 2px;
+    border: 1px solid #d1d1d1;
+    box-shadow: 0px 0px 15px rgba(100, 100, 100, 0.5);
+
+}
+
+.attQueryDiv select {
+    width: 225px;
+    height: 35px;
+    border: 1px solid lightgrey;
+    border-radius: 3px;
+    margin: 0px auto 20px 10px;
+}
+
+.attQueryDiv input {
+    width: 225px;
+    height: 35px;
+    border: 1px solid lightgrey;
+    border-radius: 3px;
+    margin: 0px auto 20px 10px;
+}
+
+.attQueryDiv label {
+    color: grey;
+    margin: 10px 10px 0px 10px;
+}
+
+
+
+.attQryRun {
+    color: white;
+    background-color: green;
+    border-radius: 3px;
+    border: 1px solid black;
+    height: 35px;
+    width: 50px;
+    margin: 10px 10px 10px 110px;
+}
+
+.attListDiv {
+    position: absolute;
+  
+    margin: 350px auto auto 350px;
+
+    width: auto;
+    max-width: 750px;
+
+    height: 250px;
+    background-color: rgba(255, 255, 255, 0.9);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+    line-height: 1.45;
+    border-radius: 2px;
+    border: 1px solid #d1d1d1;
+    box-shadow: 2px 3px 2px rgba(0, 0, 0, 0.5);
+
+    overflow: scroll;
+}
+
+#attQryTable {
+    padding: 0;
+    border-collapse: collapse;
+}
+
+#attQryTable,
+td,
+th {
+    padding: 0px 5px 0px 5px;
+    border: 1px solid black;
+}
+
+#attQryTable th {
+    color: white;
+    background-color: midnightblue;
+    position: sticky;
+    top: 0;
+    font-style: normal;
+    padding: 5px 10px 5px 10px;
+}
+
+#attQryTable tr:hover
+ {
+    background-color: lightgrey;
+}
+
+#headerDiv {
+    background-color: #00994d;
+    height: 35px;
+    margin: 0px 0px 10px 0px;
+}
+
+#headerDiv label {
+    color: white;
+    margin: 10px;
+    font-weight: bold;
+}
+
+.attQryClear {
+    color: white;
+    background-color: slategrey;
+    border-radius: 3px;
+    border: 1px solid black;
+    height: 35px;
+    width: 50px;
+    margin: 10px;
+}
+
+.ol-scale-bar {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 8px;
+}
+.ol-scale-text {
+    font-size: 12px;
+}
+
+.myImg {
+    width: 22px;
+    height: 22px;
+    filter: brightness(0) invert(1);
+}
+
+.myButton .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    border-radius: 9px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+
+    left: 125%;
+
+    opacity: 0;
+    transition: opacity 0.5s;
+
+    font-style: normal;
+}
+
+.myButton:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+.myButton .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent #000 transparent transparent;
+}
+
+.spQueryDiv {
+    position: absolute;
+
+    top: 447px;
+    left: 0px;
+    width: 345px;
+    background-color: rgba(255, 255, 255, 0.9);
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1em;
+    line-height: 1.45;
+    border-radius: 2px;
+    border: 1px solid #d1d1d1;
+    box-shadow: 0px 0px 15px rgba(100, 100, 100, 0.5);
+}
+
+.spQueryDiv select {
+    width: 225px;
+    height: 35px;
+    border: 1px solid lightgrey;
+    border-radius: 3px;
+    margin: 0px auto 20px 10px;
+}
+
+.spQueryDiv input {
+    width: 225px;
+    height: 35px;
+    border: 1px solid lightgrey;
+    border-radius: 3px;
+    margin: 0px auto 20px 10px;
+}
+
+.spQueryDiv label {
+    color: grey;
+    margin: 10px 10px 0px 10px;
+}
+
+#bufferDistance {
+    width: 100px;
+}
+
+#distanceUnits {
+    width: 100px;
+    margin: 0px auto 0px 20px;
+}
+
+.spUserInput {
+    color: white;
+    background-color: rgb(95, 125, 207);
+    border-radius: 3px;
+    border: 1px solid rgb(0, 0, 0);
+    height: 35px;
+    width: 50px;
+    margin: 10px;
+}
+
+.spUserInput.clicked {
+    background-color: rgb(230, 107, 107);
+}
+
+.spQryRun {
+    color: white;
+    background-color: green;
+    border-radius: 3px;
+    border: 1px solid black;
+    height: 35px;
+    width: 50px;
+    margin: 10px 22px 10px 22px;
+}
+
+.spQryClear {
+
+    color: white;
+    background-color: slategrey;
+    border-radius: 3px;
+    border: 1px solid black;
+    height: 35px;
+    width: 50px;
+    margin: 10px;
+}
+
+*/
