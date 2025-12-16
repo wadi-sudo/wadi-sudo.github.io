@@ -790,10 +790,92 @@ function runNearbyAnalysis(clickLatLng) {
   clickMarker.bindPopup(popupHtml).openPopup();
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////// SEARCH BAR ////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+const searchControl = L.control({ position: 'topright' });
+
+searchControl.onAdd = function () {
+  const div = L.DomUtil.create('div', 'search-control');
+
+  div.innerHTML = `
+    <input 
+      type="text" 
+      id="searchInput" 
+      class="form-control form-control-sm"
+      placeholder="Search POIs..."
+    />
+    <div id="searchResults"></div>
+  `;
+
+  L.DomEvent.disableClickPropagation(div);
+
+  return div;
+};
+
+searchControl.addTo(map);
+
+/////////////////////////////
+
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', function () {
+  const query = this.value.toLowerCase();
+  searchResults.innerHTML = '';
+
+  if (query.length < 2) return;
+
+  const matches = allPOIs.filter(poi => {
+    const name = poi.properties.Name_POI_F || '';
+    return name.toLowerCase().includes(query);
+  });
+
+  matches.slice(0, 20).forEach(poi => {
+    const div = document.createElement('div');
+    div.className = 'search-item';
+    div.innerHTML = `
+      <span style="color:${categoryStyles[poi.category]?.color}">
+        ● ${categoryLabels[poi.category]}
+      </span><br>
+      <small>${poi.properties.Name_POI_F}</small>
+    `;
+
+    div.onclick = function () {
+      zoomToPOI(poi);
+    };
+
+    searchResults.appendChild(div);
+  });
+});
+//////////////////////////////
+
+function zoomToPOI(poi) {
+  clearAnalysis();
+  searchResults.innerHTML = '';
+  searchInput.value = '';
+
+  map.setView(poi.latlng, 19);
+
+  const highlight = L.circleMarker(poi.latlng, {
+    radius: 10,
+    color: categoryStyles[poi.category]?.color || '#000',
+    fillOpacity: 0.9
+  }).addTo(analysisLayer);
+
+  setTimeout(() => {
+    analysisLayer.removeLayer(highlight);
+  }, 3000);
+
+  poi.layer.openPopup();
+}
+
+
 
   </script>
 </body>
 </html>
+
 
 
 
