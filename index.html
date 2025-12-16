@@ -374,10 +374,7 @@ const overlayMaps = {
   "Administration": clusterGroupadmin
 };
 
-L.control.layers(baseMaps, overlayMaps, {
-  collapsed: true,
-  position: 'bottomleft'
-}).addTo(map);
+
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -411,7 +408,10 @@ L.easyButton({
 
 L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
 
-
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: true,
+  position: 'bottomleft'
+}).addTo(map);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// Analysis /////////////////////////////////////////////////////////
@@ -934,6 +934,7 @@ document.getElementById('heatmapSelect').addEventListener('change', function () 
   </script>
 </body>
 </html>
+
 
 
 
