@@ -1,0 +1,163 @@
+
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: #f4f6f9;
+}
+
+nav {
+  background-color: #2c3e50;
+  color: white;
+  padding: 12px 24px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  align-items: center;
+  justify-content: center;
+}
+
+#map {
+  height: calc(100vh - 60px);
+  width: 100%;
+}
+
+
+
+/* 
+#map { height: 90vh;
+    border-radius : 10px;
+  } */
+
+
+.closebtn {
+position: absolute;
+top: 0;
+right: 10px;
+font-size: 30px;
+margin-left: 50px;
+text-decoration: none;
+color: black;
+}
+
+/* === GLOBAL LEAFLET BUTTON STYLE === */
+.leaflet-bar {
+border: none !important;
+}
+.leaflet-bar a,
+.leaflet-control .easy-button-button {
+width: 44px !important;
+height: 44px !important;
+line-height: 44px !important;
+
+border-radius: 50% !important;   /* cercle parfait */
+background-color: #0A1F33 !important; /* bleu foncé */
+color: #ffffff !important;
+
+border: none !important;
+box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+
+font-size: 18px;
+text-align: center;
+}
+
+/* Icônes Font Awesome bien centrées */
+.leaflet-bar a i,
+.easy-button-button i {
+line-height: 44px;
+color: #ffffff;
+}
+
+/* Hover effect */
+.leaflet-bar a:hover,
+.easy-button-button:hover {
+background-color: #123B5A !important;
+transform: scale(1.05);
+}
+
+/* Active / touch feedback */
+.leaflet-bar a:active,
+.easy-button-button:active {
+transform: scale(0.95);
+}
+
+
+.sidebar-content {
+padding: 15px;
+font-family: Arial, sans-serif;
+}
+
+.sidebar-content h2 {
+margin-top: 0;
+font-size: 18px;
+}
+
+.sidebar-image {
+width: 100%;
+border-radius: 8px;
+margin: 10px 0;
+box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.sidebar-content p {
+font-size: 14px;
+line-height: 1.5;
+color: #333;
+}
+
+
+
+
+/* === LAYER CONTROL PANEL === */
+.leaflet-control-layers {
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  border: none;
+  background: #ffffff;
+  padding: 1px;
+  font-size: 14px;
+}
+
+/* Section titles */
+.leaflet-control-layers-base label,
+.leaflet-control-layers-overlays label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+/* Inputs */
+.leaflet-control-layers input {
+  accent-color: #0A1F33;
+  cursor: pointer;
+}
+
+/* Hover row */
+.leaflet-control-layers label:hover {
+  background-color: #f1f5f9;
+  border-radius: 6px;
+}
+
+
+.map-toast {
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.radius-control {
+  background: white;
+  padding: 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  width: 130px;
+}
+
