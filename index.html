@@ -506,6 +506,10 @@ L.easyButton({
 
 function clearAnalysis() {
   analysisLayer.clearLayers();
+	    if (zoneLayer) {
+    map.removeLayer(zoneLayer);
+    zoneLayer = null;
+  }
   if (clickMarker) {
     map.removeLayer(clickMarker);
     clickMarker = null;
@@ -974,7 +978,24 @@ let graph = {};
 
 let edgesData = null;
 
+let zoneLayer = null;
+let zonePolygon = null;
+fetch('urban/data/zone.geojson')
+  .then(res => res.json())
+  .then(data => {
 
+    zonePolygon = data;
+
+    zoneLayer = L.geoJSON(data, {
+      style: {
+        color: '#ff7800',
+        weight: 2,
+        fillOpacity: 0.05,
+        dashArray: '6,4'
+      }
+    });
+  });
+	  
 fetch('urban/data/nodes.geojson')
   .then(res => res.json())
   .then(data => {
@@ -1196,6 +1217,7 @@ L.easyButton({
   </script>
 </body>
 </html>
+
 
 
 
