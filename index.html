@@ -40,6 +40,13 @@ rel="stylesheet"
 </head>
 
 <body>
+  <div id="route-spinner" class="spinner-overlay d-none">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Loading...</span>
+  </div>
+  <div class="mt-2 fw-semibold">Computing shortest path...</div>
+  </div>
+	
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
 
     <a class="navbar-brand text-white" href="#" onclick="location.reload();" title="Click to reload the dashboard" style="justify-content: center;display: flex;align-items: center; width: 100%; text-wrap: inherit;">
@@ -482,20 +489,20 @@ L.easyButton({
   }]
 }).addTo(map);
 
-L.easyButton({
-  position: 'bottomright',
-  states: [{
-    stateName: 'clear',
-    icon: 'fa-xmark',
-    title: 'Clear analysis',
-    onClick: function () {
-      analysisMode = null;
-      clearAnalysis();
-      map.removeControl(radiusControl);
-      showToast('Analysis cleared');
-    }
-  }]
-}).addTo(map);
+// L.easyButton({
+//   position: 'bottomright',
+//   states: [{
+//     stateName: 'clear',
+//     icon: 'fa-xmark',
+//     title: 'Clear analysis',
+//     onClick: function () {
+//       analysisMode = null;
+//       clearAnalysis();
+//       map.removeControl(radiusControl);
+//       showToast('Analysis cleared');
+//     }
+//   }]
+// }).addTo(map);
 
 function clearAnalysis() {
   analysisLayer.clearLayers();
@@ -943,10 +950,253 @@ document.getElementById('heatmapSelect').addEventListener('change', function () 
 });
 
 
+////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// ROUTING /////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+function showSpinner() {
+  document.getElementById('route-spinner').classList.remove('d-none');
+}
+
+function hideSpinner() {
+  document.getElementById('route-spinner').classList.add('d-none');
+}
+let routeLayer = null;
+
+
+
+const routingWorker = new Worker('urban/plugin/routingWorker.js');
+
+let nodes = [];
+let edges = [];
+
+let nodeIndex = {};
+let graph = {};
+
+let edgesData = null;
+
+
+fetch('urban/data/nodes.geojson')
+  .then(res => res.json())
+  .then(data => {
+    data.features.forEach(f => {
+      const id = +f.properties.id;
+      const [lng, lat] = f.geometry.coordinates;
+
+      nodes.push({ id, lat, lng });
+      nodeIndex[id] = { lat, lng };
+
+      // Initialize graph node
+      graph[id] = [];
+    });
+
+    // After nodes are ready, load edges
+    loadEdges();
+  });
+function loadEdges() {
+  fetch('urban/data/edges.geojson')
+    .then(res => res.json())
+    .then(data => {
+      data.features.forEach(f => {
+        const p = f.properties;
+
+        const source = +p.source;
+        const target = +p.target;
+        const distanceDeg = +p.distance;
+
+        // SAFETY CHECKS (VERY IMPORTANT)
+        if (!graph[source] || !graph[target]) return;
+
+        const meters = distanceDeg * 111320;
+
+        graph[source].push({
+          to: target,
+          weight: meters
+        });
+
+        graph[target].push({
+          to: source,
+          weight: meters
+        });
+      });
+
+      console.log('Graph ready:', Object.keys(graph).length, 'nodes');
+    });
+}
+
+///////////////////////////////////////////////////////////////////
+
+let routingMode = false;
+let clickCount = 0;
+
+let startMarker = null;
+let endMarker = null;
+let routeLine = null;
+
+let startNodeId = null;
+let endNodeId = null;
+
+L.easyButton({
+  position: 'bottomright',
+  states: [{
+    icon: 'fa-route',
+    title: 'Shortest Path',
+    onClick: () => {
+      routingMode = true;
+      clickCount = 0;
+      clearRoute();
+      // alert('Click point A, then point B');
+      showToast('Click point A, then point B');
+    }
+  }]
+}).addTo(map);
+////////////////////////////////////MAp logic///////////////////
+map.on('click', e => {
+  if (!routingMode) return;
+
+  clickCount++;
+
+  if (clickCount === 1) {
+    startMarker = L.marker(e.latlng).addTo(map);
+    startNodeId = findNearestNode(e.latlng);
+  }
+
+  if (clickCount === 2) {
+    endMarker = L.marker(e.latlng).addTo(map);
+    endNodeId = findNearestNode(e.latlng);
+
+    showSpinner();
+
+    // Let UI update before heavy computation
+    setTimeout(() => {
+      computeRoute();
+      hideSpinner();
+      routingMode = false;
+    }, 50);
+  }
+});
+
+//////////////////////////////////////////
+function findNearestNode(latlng) {
+  let minDist = Infinity;
+  let nearest = null;
+
+  nodes.forEach(n => {
+    const d = map.distance(latlng, [n.lat, n.lng]);
+    if (d < minDist) {
+      minDist = d;
+      nearest = n.id;
+    }
+  });
+
+  return nearest;
+}
+//////////////////////////////
+
+function computeRoute() {
+  showSpinner();
+
+  routingWorker.postMessage({
+    graph: graph,
+    start: startNodeId,
+    end: endNodeId
+  });
+}
+
+
+
+function clearRoute() {
+  if (startMarker) map.removeLayer(startMarker);
+  if (endMarker) map.removeLayer(endMarker);
+  if (routeLine) map.removeLayer(routeLine);
+if (routeLayer) map.removeLayer(routeLayer);
+  startMarker = null;
+  endMarker = null;
+  routeLine = null;
+}
+
+
+/////////////////////////////////////////////////////////////////
+routingWorker.onmessage = function (e) {
+  const { path, distance } = e.data;
+
+  hideSpinner();
+
+  if (!path || path.length === 0) {
+    showToast('No route found');
+    return;
+  }
+
+  // drawRoute(path);
+  drawRoute(path, distance);
+
+  showRouteInfo(distance);
+};
+
+
+function drawRoute(path, distance) {
+
+  if (routeLayer) {
+    map.removeLayer(routeLayer);
+  }
+
+  const latlngs = path.map(id => {
+    const n = nodeIndex[id];
+    return [n.lat, n.lng];
+  });
+
+  routeLayer = L.polyline(latlngs, {
+    color: '#007bff',
+    weight: 5
+  }).addTo(map);
+
+  // Format distance
+  const km = (distance / 100000).toFixed(2);
+
+  // Bind popup to route
+  routeLayer.bindPopup(`
+    <div style="font-size:14px">
+      <b>Shortest Path</b><br>
+      Distance: <b>${km} km</b>
+    </div>
+  `);
+
+  // Optional: open popup automatically
+  routeLayer.openPopup();
+
+  map.fitBounds(routeLayer.getBounds());
+}
+
+function showRouteInfo(distance) {
+  const km = (distance / 1000).toFixed(2);
+  console.log(`Route distance: ${km} km`);
+}
+
+
+
+
+
+
+L.easyButton({
+  position: 'bottomright',
+  states: [{
+    stateName: 'clear',
+    icon: 'fa-xmark',
+    title: 'Clear analysis',
+    onClick: function () {
+      analysisMode = null;
+      clearAnalysis();
+      map.removeControl(radiusControl);
+      showToast('Analysis cleared');
+    }
+  }]
+}).addTo(map);
+
+
 
   </script>
 </body>
 </html>
+
 
 
 
