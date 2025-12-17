@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "zone",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "id": 5 }, "geometry": { "type": "MultiPolygon", "coordinates": [ [ [ [ 10.150107629112163, 36.903120092113085 ], [ 10.345500350279105, 36.899474705524149 ], [ 10.341490425031274, 36.774073406864773 ], [ 10.153023938383312, 36.778083332112601 ], [ 10.150107629112163, 36.903120092113085 ] ] ] ] } }
+]
+}
