@@ -507,14 +507,15 @@ L.easyButton({
 
 function clearAnalysis() {
   analysisLayer.clearLayers();
-	    if (zoneLayer) {
-    map.removeLayer(zoneLayer);
-    zoneLayer = null;
-  }
+	 //    if (zoneLayer) {
+  //   map.removeLayer(zoneLayer);
+  //   zoneLayer = null;
+  // }
   if (clickMarker) {
     map.removeLayer(clickMarker);
     clickMarker = null;
   }
+	clearRoute()
 }
 
 function showToast(message) {
@@ -1222,6 +1223,7 @@ L.easyButton({
   </script>
 </body>
 </html>
+
 
 
 
