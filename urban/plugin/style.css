@@ -208,5 +208,10 @@ color: #333;
   justify-content: center;
 }
 
+#osm-results {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 
 
