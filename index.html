@@ -900,26 +900,24 @@ function zoomToPOI(poi) {
 
 
 ///////////// osmsearch////////
-
-	  const osmSearchControl = L.control({ position: 'topright' });
+const osmSearchControl = L.control({ position: 'topright' });
 
 osmSearchControl.onAdd = function () {
 
   const container = L.DomUtil.create('div', 'leaflet-bar bg-white p-2');
-  container.style.width = '220px';
+  container.style.width = '240px';
 
   container.innerHTML = `
     <input
       id="osm-search-input"
       type="text"
       class="form-control form-control-sm"
-      placeholder="Search place (OSM)"
+      placeholder="Search place (Tunisia)"
       autocomplete="off"
     >
     <div id="osm-results" class="list-group mt-1"></div>
   `;
 
-  // prevent map dragging while typing
   L.DomEvent.disableClickPropagation(container);
 
   return container;
@@ -928,25 +926,31 @@ osmSearchControl.onAdd = function () {
 osmSearchControl.addTo(map);
 
 
-
 let osmMarker = null;
-let osmTimeout = null;
+let osmMarkerTimeout = null;
+let osmSearchTimer = null;
 
-const input = document.getElementById('osm-search-input');
-const resultsDiv = document.getElementById('osm-results');
+const osmInput = document.getElementById('osm-search-input');
+const osmResults = document.getElementById('osm-results');
 
-input.addEventListener('input', function () {
+osmInput.addEventListener('input', function () {
 
   const query = this.value.trim();
-  resultsDiv.innerHTML = '';
+  osmResults.innerHTML = '';
 
   if (query.length < 3) return;
 
-  clearTimeout(osmTimeout);
+  clearTimeout(osmSearchTimer);
 
-  osmTimeout = setTimeout(() => {
+  osmSearchTimer = setTimeout(() => {
 
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`;
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json` +
+      `&q=${encodeURIComponent(query)}` +
+      `&countrycodes=tn` +
+      `&addressdetails=1` +
+      `&limit=5`;
 
     fetch(url, {
       headers: {
@@ -957,18 +961,24 @@ input.addEventListener('input', function () {
     .then(res => res.json())
     .then(data => {
 
-      resultsDiv.innerHTML = '';
+      osmResults.innerHTML = '';
+
+      if (!data.length) return;
 
       data.forEach(place => {
 
         const item = document.createElement('button');
         item.className = 'list-group-item list-group-item-action';
         item.style.fontSize = '12px';
-        item.innerText = place.display_name;
+
+        item.innerHTML = `
+          <strong>${place.name || place.display_name.split(',')[0]}</strong><br>
+          <small class="text-muted">${place.display_name}</small>
+        `;
 
         item.onclick = () => zoomToOSMPlace(place);
 
-        resultsDiv.appendChild(item);
+        osmResults.appendChild(item);
       });
     });
 
@@ -976,13 +986,14 @@ input.addEventListener('input', function () {
 });
 
 
-
 function zoomToOSMPlace(place) {
 
   const lat = parseFloat(place.lat);
   const lon = parseFloat(place.lon);
 
+  // remove previous marker + timer
   if (osmMarker) map.removeLayer(osmMarker);
+  if (osmMarkerTimeout) clearTimeout(osmMarkerTimeout);
 
   osmMarker = L.marker([lat, lon])
     .addTo(map)
@@ -991,8 +1002,22 @@ function zoomToOSMPlace(place) {
 
   map.setView([lat, lon], 15);
 
-  document.getElementById('osm-results').innerHTML = '';
-}	  
+  // auto remove marker after 5 seconds
+  osmMarkerTimeout = setTimeout(() => {
+    if (osmMarker) {
+      map.removeLayer(osmMarker);
+      osmMarker = null;
+    }
+  }, 5000);
+
+  osmResults.innerHTML = '';
+}
+
+map.on('click', () => {
+  osmResults.innerHTML = '';
+});
+
+	  
 /////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// HEAT MAP ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -1325,6 +1350,7 @@ L.easyButton({
   </script>
 </body>
 </html>
+
 
 
 
