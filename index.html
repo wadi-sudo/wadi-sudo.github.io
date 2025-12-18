@@ -531,7 +531,7 @@ function showToast(message) {
 
   setTimeout(() => {
     map.removeControl(toast);
-  }, 6000);
+  }, 7000);
 }
 
 
@@ -1071,6 +1071,10 @@ L.easyButton({
     zoneLayer.addTo(map);
     map.fitBounds(zoneLayer.getBounds());
   }
+		          if (zoneLayer && map.hasLayer(zoneLayer)) {
+    // zoneLayer.addTo(map);
+    map.fitBounds(zoneLayer.getBounds());
+  }
       // alert('Click point A, then point B');
       showToast('Click point A, then point B, inside the current display (this demo works only inside the polygon zone layer displayed)');
     }
@@ -1223,6 +1227,7 @@ L.easyButton({
   </script>
 </body>
 </html>
+
 
 
 
