@@ -1152,8 +1152,9 @@ routingWorker.onmessage = function (e) {
 
   hideSpinner();
 
-  if (!path || path.length === 0) {
-    showToast('No route found');
+  if (!isFinite(distance) || !path || path.length === 0) {
+    showToast('No Path found ! please TRY different Location');
+    clearAnalysis();
     return;
   }
 
@@ -1227,6 +1228,7 @@ L.easyButton({
   </script>
 </body>
 </html>
+
 
 
 
