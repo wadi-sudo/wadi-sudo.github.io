@@ -225,6 +225,24 @@ L.control.layers(baseMaps, overlayMaps, {
   collapsed: true,
   position: 'bottomleft'
 }).addTo(map);
+
+function showToast(message) {
+  const toast = L.control({ position: 'bottomright' });
+
+  toast.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-toast');
+    div.innerHTML = message;
+    // div.style.zIndex = '5000'
+    return div;
+  };
+
+  toast.addTo(map);
+
+  setTimeout(() => {
+    map.removeControl(toast);
+  }, 6000);
+}
+showToast('Click anywhere on the map')
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// Logic////////////////////////////
 
@@ -489,6 +507,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
