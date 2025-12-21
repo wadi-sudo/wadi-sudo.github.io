@@ -61,17 +61,18 @@ rel="stylesheet"
     <div class="sidebar-content">
       <h2> 🩺 Health Accessibility</h2>
       <p>
-        Click on the map to view a health accessibility summary for that location.
-
+        Click on the map to view a health accessibility summary for that location.</p>
+ <p>
 The score is based on nearby healthcare services:
 
 Primary care refers to medical offices, medical centers, and dispensaries.
 
 Diagnostic services include medical laboratories and medical imaging centers.
-
+</p>
+		 <p>
 Results indicate whether the area is well, moderately, or poorly served, helping users quickly understand local healthcare availability.
-      </p>
       
+ </p>     
     
     </div>
     
@@ -243,6 +244,22 @@ function showToast(message) {
   }, 6000);
 }
 showToast('Click anywhere on the map')
+
+
+map.locate({ setView: false, maxZoom: 16 });
+
+// When location is found, fly to it
+map.on('locationfound', function(e) {
+    map.flyTo(e.latlng, 14); // Zoom 16, you can adjust
+    // L.marker(e.latlng).addTo(map)
+    //     .bindPopup("You are here!")
+    //     .openPopup();
+});
+
+// If location is not found
+map.on('locationerror', function(e) {
+    showToast("Could not get your location.");
+});
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// Logic////////////////////////////
 
@@ -507,6 +524,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
