@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Health Awareness</title>
+  <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet"> -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="urban/plugin/L.Control.Sidebar.css" />
+  <script src="urban/plugin/L.Control.Sidebar.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
+<link rel="stylesheet" href="urban/plugin/style.css" />
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"
+/>
+
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="urban/plugin/L.Control.MousePosition.js"></script>
+<link rel="stylesheet" href="urban/plugin/L.Control.MousePosition.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+rel="stylesheet"
+>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+
+
+</head>
+
+<body>
+
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+
+    <a class="navbar-brand text-white" href="#" onclick="location.reload();" title="Click to reload the dashboard" style="justify-content: center;display: flex;align-items: center; width: 100%; text-wrap: inherit;">
+      <i class="fas fa-globe-africa me-2"></i>
+      Health Awareness
+   
+    </a>
+    
+  </nav>
+
+<div id="map"></div>
+<div id="side-bar" style="background-color: #f1f1f1">
+    <a href="javascript:void(0)" class="closebtn" onclick="sidebarreturn()"
+        >&times;</a
+    >
+    <br>
+    <div class="sidebar-content">
+      <h2> 🩺 Health Accessibility</h2>
+      <p>
+        Click on the map to view a health accessibility summary for that location.
+
+The score is based on nearby healthcare services:
+
+Primary care refers to medical offices, medical centers, and dispensaries.
+
+Diagnostic services include medical laboratories and medical imaging centers.
+
+Results indicate whether the area is well, moderately, or poorly served, helping users quickly understand local healthcare availability.
+      </p>
+      
+    
+    </div>
+    
+</div>
+
+
+  
+
+  <script>
+
+const map = L.map('map', {
+  center: [36.48, 9.61],
+  zoom: 8,
+  zoomControl: false  // disable default top-left zoom
+});
+
+    const topoesri = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+).addTo(map);
+// OpenStreetMap
+const osm = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }
+);
+
+// Esri Satellite Imagery
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+  'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+);
+
+
+const allPOIs = [];
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD GEOJSON DATA /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const healthIcon = L.icon({
+  iconUrl: 'urban/icons/red-cross.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGrouphealth = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+///
+
+    // 3. Load your GeoJSON
+  
+fetch('urban/data/health.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poihealth = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: healthIcon });
+      // },
+      const marker = L.marker(latlng, { icon: healthIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'health',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGrouphealth.addLayer(poihealth);
+    //map.addLayer(clusterGrouphealth);
+  });
+/////
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// BASE MAPS/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const baseMaps = {
+  "OpenStreetMap": osm,
+  "Esri Satellite": esriSat,
+  "Esri Topographie":topoesri
+};
+
+const overlayMaps = {
+  "Health": clusterGrouphealth
+};
+
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD EASY-BUTTONS /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+L.control.zoom({
+  position: 'topleft'
+}).addTo(map);
+
+function sidebarreturn() {
+				ctlSidebar.toggle();
+			}
+			ctlSidebar = L.control.sidebar("side-bar").addTo(map);
+			ctlEasybutton = L.easyButton("fa fa-bars", function () {
+				ctlSidebar.toggle();
+			})
+				.setPosition("topleft")
+				.addTo(map);
+
+L.easyButton({
+    position: 'topleft',       // top right corner
+    states: [{
+        stateName: 'go-to-page',
+        icon: 'fa-refresh',  // font awesome icon
+        title: 'Return to previous page',
+        onClick: function(btn, map){
+            window.location.href = './index.html'; // redirect
+        }
+    }]
+}).addTo(map);
+
+L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
+
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: true,
+  position: 'bottomleft'
+}).addTo(map);
+///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// Logic////////////////////////////
+
+function distanceMeters(a, b) {
+  return map.distance(a, b);
+}
+
+const healthConfig = {
+  pharmacy: {
+    icon: "💊",
+    label: "Pharmacies",
+    radius: 500,
+    values: ["Pharmacie"],
+    score: 20
+  },
+  primary: {
+    icon: "🩺",
+    label: "Primary Care",
+    radius: 1000,
+    values: [
+      "Cabinet médical",
+      "Centre médical",
+      "Dispensaire"
+    ],
+    score: 30
+  },
+  diagnostic: {
+    icon: "🧪",
+    label: "Diagnostic",
+    radius: 2000,
+    values: [
+      "Laboratoire d’analyses",
+      "Imagerie médicale"
+    ],
+    score: 20
+  },
+  hospital: {
+    icon: "🏥",
+    label: "Hospital / Clinic",
+    radius: 5000,
+    values: [
+      "Clinique",
+      "Hôpital"
+    ],
+    score: 30
+  }
+};
+
+
+function analyzeHealth(latlng) {
+  let totalScore = 0;
+  let breakdown = [];
+  let categoriesFound = 0;
+
+  for (const key in healthConfig) {
+    const cfg = healthConfig[key];
+
+    const found = allPOIs.filter(poi => {
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return distanceMeters(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      categoriesFound++;
+    }
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  // Diversity bonus
+  if (categoriesFound >= 3) {
+    totalScore += 10;
+  }
+
+  return { totalScore, breakdown };
+}
+
+
+
+function interpretScore(score) {
+  if (score >= 70) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 40) return { label: "MODERATE", color: "orange", icon: "🟠" };
+  return { label: "POOR", color: "red", icon: "🔴" };
+}
+
+
+function buildPopup(result) {
+  const status = interpretScore(result.totalScore);
+
+  let html = `
+    <b>📍 Health Accessibility Overview</b><br><br>
+    ${status.icon} <b style="color:${status.color}">
+      Overall Level: ${status.label}
+    </b><br><br>
+  `;
+
+  result.breakdown.forEach(item => {
+    html += `
+      ${item.icon} ${item.label}: 
+      <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
+    `;
+  });
+
+  if (status.label === "POOR") {
+    html += `<br>⚠ Limited access to healthcare services`;
+  }
+
+  return html;
+}
+
+
+
+let clickMarker = null;
+
+map.on("click", function (e) {
+  const latlng = e.latlng;
+
+  if (clickMarker) {
+    map.removeLayer(clickMarker);
+  }
+// console.log(allPOIs)
+  clickMarker = L.circleMarker(latlng, {
+    radius: 6,
+    color: "#000",
+    fillColor: "#fff",
+    fillOpacity: 1
+  }).addTo(map);
+
+  const analysis = analyzeHealth(latlng);
+  const popupHtml = buildPopup(analysis);
+
+  clickMarker.bindPopup(popupHtml).openPopup();
+});
+
+
+
+//////////////////////////////////////////////////////// osm/////////////////////////////
+
+///////////// osmsearch////////
+const osmSearchControl = L.control({ position: 'topright' });
+
+osmSearchControl.onAdd = function () {
+
+  const container = L.DomUtil.create('div', 'leaflet-bar bg-white p-2');
+  container.style.width = '240px';
+
+  container.innerHTML = `
+    <input
+      id="osm-search-input"
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="Search place OSM(Tunisia)"
+      autocomplete="off"
+    >
+    <div id="osm-results" class="list-group mt-1"></div>
+  `;
+
+  L.DomEvent.disableClickPropagation(container);
+
+  return container;
+};
+
+osmSearchControl.addTo(map);
+
+
+let osmMarker = null;
+let osmMarkerTimeout = null;
+let osmSearchTimer = null;
+
+const osmInput = document.getElementById('osm-search-input');
+const osmResults = document.getElementById('osm-results');
+
+osmInput.addEventListener('input', function () {
+
+  const query = this.value.trim();
+  osmResults.innerHTML = '';
+
+  if (query.length < 3) return;
+
+  clearTimeout(osmSearchTimer);
+
+  osmSearchTimer = setTimeout(() => {
+
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json` +
+      `&q=${encodeURIComponent(query)}` +
+      `&countrycodes=tn` +
+      `&addressdetails=1` +
+      `&limit=5`;
+
+    fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'UrbanAnalysisGIS/1.0'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+
+      osmResults.innerHTML = '';
+
+      if (!data.length) return;
+
+      data.forEach(place => {
+
+        const item = document.createElement('button');
+        item.className = 'list-group-item list-group-item-action';
+        item.style.fontSize = '12px';
+
+        item.innerHTML = `
+          <strong>${place.name || place.display_name.split(',')[0]}</strong><br>
+          <small class="text-muted">${place.display_name}</small>
+        `;
+
+        item.onclick = () => zoomToOSMPlace(place);
+
+        osmResults.appendChild(item);
+      });
+    });
+
+  }, 300); // debounce
+});
+
+
+function zoomToOSMPlace(place) {
+
+  const lat = parseFloat(place.lat);
+  const lon = parseFloat(place.lon);
+
+  // remove previous marker + timer
+  if (osmMarker) map.removeLayer(osmMarker);
+  if (osmMarkerTimeout) clearTimeout(osmMarkerTimeout);
+
+  osmMarker = L.marker([lat, lon])
+    .addTo(map)
+    .bindPopup(`<b>${place.display_name}</b>`)
+    .openPopup();
+
+  map.setView([lat, lon], 15);
+
+  // auto remove marker after 5 seconds
+  osmMarkerTimeout = setTimeout(() => {
+    if (osmMarker) {
+      map.removeLayer(osmMarker);
+      osmMarker = null;
+    }
+  }, 5000);
+
+  osmResults.innerHTML = '';
+}
+
+map.on('click', () => {
+  osmResults.innerHTML = '';
+});
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
