@@ -613,7 +613,135 @@ function interpretScore(score) {
 
 //   return html;
 // }
+/////////////////////////////////////////////// meduim logic////////////
+// function buildPopup(result) {
+//   const status = interpretScore(result.totalScore);
 
+//   let html = `
+//     <div style="font-family:Inter,sans-serif; font-size:14px; line-height:1.4;">
+//       <b>📍 Health Accessibility</b><br>
+//       ${status.icon} <b style="color:${status.color}">Overall: ${status.label}</b><br>
+//       <small>Total Score: ${result.totalScore}</small><br><br>
+
+//       <b>Nearby Services:</b>
+//       <ul style="padding-left:20px; margin:5px 0;">
+//   `;
+
+//   result.breakdown.forEach(item => {
+//     if (item.count > 0) {
+//       html += `
+//         <li>
+//           ${item.icon} ${item.label}: <b>${item.count}</b> (≤${item.radius/1000} km)
+//           ${item.label === "Primary Care" ? 
+//             `<br><small style="color:#555;">Medical offices, centers, and dispensaries.</small>` 
+//             : ""}
+//         </li>
+//       `;
+//     }
+//   });
+
+//   // Diversity bonus
+//   if (result.totalScore >= 10 && result.breakdown.filter(b => b.count > 0).length >= 4) {
+//     html += `<li>🎁 Diversity Bonus: +10 points (≥4 categories)</li>`;
+//   }
+
+//   html += `</ul>`;
+
+//   // Status note
+//   if (status.label === "POOR") {
+//     html += `<small style="color:red;">⚠ Limited access to essential healthcare services</small>`;
+//   } else if (status.label === "MODERATE") {
+//     html += `<small style="color:orange;">Moderate access to healthcare services</small>`;
+//   } else {
+//     html += `<small style="color:green;">Good access to healthcare services</small>`;
+//   }
+
+//   html += `</div>`;
+
+//   return html;
+// }
+
+
+// let clickMarker = null;
+
+// map.on("click", function (e) {
+//   const latlng = e.latlng;
+
+//   if (clickMarker) {
+//     map.removeLayer(clickMarker);
+//   }
+
+//   clickMarker = L.circleMarker(latlng, {
+//     radius: 6,
+//     color: "#000",
+//     fillColor: "#fff",
+//     fillOpacity: 1
+//   }).addTo(map);
+
+//   const analysis = analyzeHealth(latlng);
+//   const popupHtml = buildPopup(analysis);
+
+//   clickMarker.bindPopup(popupHtml).openPopup();
+
+//   // 🔦 HIGHLIGHT POIs USED IN ANALYSIS
+//   if (analysis.usedPOIs && analysis.usedPOIs.length > 0) {
+//     highlightPOIs(analysis.usedPOIs);
+//     console.log('ok')
+//   }
+// });
+
+// let highlightLayer = L.layerGroup().addTo(map);
+
+// function highlightPOIs(pois) {
+//   highlightLayer.clearLayers();
+
+//   pois.forEach(poi => {
+//     const highlightMarker = L.circleMarker(poi.latlng, {
+//       radius: 5,
+//       color: '#ff0000',
+//       weight: 2,
+//       fillColor: '#ff0000',
+//       fillOpacity: 0.4
+//     });
+
+//     highlightLayer.addLayer(highlightMarker);
+//   });
+
+//   // auto-remove after 3 seconds
+//   setTimeout(() => {
+//     highlightLayer.clearLayers();
+//   }, 3000);
+// }
+// -------------------- Floating Score Badge --------------------
+const scoreBadge = L.control({ position: 'topright' });
+
+scoreBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'score-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = 'Health Score: –';
+  return div;
+};
+scoreBadge.addTo(map);
+
+function updateScoreBadge(score) {
+  let status;
+  if (score >= 70) status = '🟢 Good';
+  else if (score >= 40) status = '🟠 Moderate';
+  else status = '🔴 Poor';
+  const div = document.querySelector('.score-badge');
+  div.innerHTML = `Health Score: ${score} – ${status}`;
+}
+
+// -------------------- Popup Builder --------------------
 function buildPopup(result) {
   const status = interpretScore(result.totalScore);
 
@@ -624,7 +752,7 @@ function buildPopup(result) {
       <small>Total Score: ${result.totalScore}</small><br><br>
 
       <b>Nearby Services:</b>
-      <ul style="padding-left:20px; margin:5px 0;">
+      <ul style="padding-left:18px; margin:5px 0;">
   `;
 
   result.breakdown.forEach(item => {
@@ -641,35 +769,36 @@ function buildPopup(result) {
   });
 
   // Diversity bonus
-  if (result.totalScore >= 10 && result.breakdown.filter(b => b.count > 0).length >= 4) {
+  if (result.breakdown.filter(b => b.count > 0).length >= 4) {
     html += `<li>🎁 Diversity Bonus: +10 points (≥4 categories)</li>`;
   }
 
   html += `</ul>`;
 
   // Status note
-  if (status.label === "POOR") {
-    html += `<small style="color:red;">⚠ Limited access to essential healthcare services</small>`;
-  } else if (status.label === "MODERATE") {
-    html += `<small style="color:orange;">Moderate access to healthcare services</small>`;
-  } else {
-    html += `<small style="color:green;">Good access to healthcare services</small>`;
-  }
+  html += `<small style="color:${status.color}; font-weight:600;">`;
+  if (status.label === "POOR") html += '⚠ Limited access to essential healthcare services';
+  else if (status.label === "MODERATE") html += 'Moderate access to healthcare services';
+  else html += 'Good access to healthcare services';
+  html += `</small>`;
 
   html += `</div>`;
+
+  // Update floating badge
+  updateScoreBadge(result.totalScore);
 
   return html;
 }
 
-
+// -------------------- Click Event with Highlights --------------------
 let clickMarker = null;
+let highlightLayer = L.layerGroup().addTo(map);
 
-map.on("click", function (e) {
+map.on("click", function(e) {
   const latlng = e.latlng;
 
-  if (clickMarker) {
-    map.removeLayer(clickMarker);
-  }
+  // Remove previous click marker
+  if (clickMarker) map.removeLayer(clickMarker);
 
   clickMarker = L.circleMarker(latlng, {
     radius: 6,
@@ -680,37 +809,30 @@ map.on("click", function (e) {
 
   const analysis = analyzeHealth(latlng);
   const popupHtml = buildPopup(analysis);
-
   clickMarker.bindPopup(popupHtml).openPopup();
 
-  // 🔦 HIGHLIGHT POIs USED IN ANALYSIS
-  if (analysis.usedPOIs && analysis.usedPOIs.length > 0) {
-    highlightPOIs(analysis.usedPOIs);
-    console.log('ok')
-  }
+  // Highlight POIs
+  highlightPOIs(analysis.usedPOIs);
 });
-
-let highlightLayer = L.layerGroup().addTo(map);
 
 function highlightPOIs(pois) {
   highlightLayer.clearLayers();
 
   pois.forEach(poi => {
     const highlightMarker = L.circleMarker(poi.latlng, {
-      radius: 5,
+      radius: 6,
       color: '#ff0000',
       weight: 2,
       fillColor: '#ff0000',
-      fillOpacity: 0.4
+      fillOpacity: 0.3
     });
-
     highlightLayer.addLayer(highlightMarker);
   });
 
-  // auto-remove after 3 seconds
+  // Auto-remove after 6 seconds
   setTimeout(() => {
     highlightLayer.clearLayers();
-  }, 3000);
+  }, 6000);
 }
 
 
@@ -837,6 +959,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
