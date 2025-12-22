@@ -137,38 +137,92 @@ const clusterGrouphealth = L.markerClusterGroup({
 ///
 
     // 3. Load your GeoJSON
-  
+      const healthLayers = {
+  'Hôpital': L.markerClusterGroup(),
+  'Clinique': L.markerClusterGroup(),
+  'Dispensaire': L.markerClusterGroup(),
+  'Centre médical': L.markerClusterGroup(),
+  'Cabinet médical': L.markerClusterGroup(),
+  'Pharmacie': L.markerClusterGroup(),
+  'Laboratoire d’analyses': L.markerClusterGroup(),
+  'Imagerie médicale': L.markerClusterGroup(),
+  'Vétérinaire': L.markerClusterGroup()
+};
+
+// fetch('urban/data/health.geojson')
+//   .then(res => res.json())
+//   .then(data => {
+
+//     const poihealth = L.geoJSON(data, {
+//       pointToLayer: function (feature, latlng) {
+//       //   return L.marker(latlng, { icon: healthIcon });
+//       // },
+//       const marker = L.marker(latlng, { icon: healthIcon });
+
+// allPOIs.push({
+//   layer: marker,
+//   latlng: latlng,
+//   category: 'health',
+//   properties: feature.properties
+// });
+
+// return marker;
+// },
+
+//       onEachFeature: function (feature, layer) {
+//         layer.bindPopup(`
+//           <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+//           <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+//         `);
+//       }
+//     });
+
+//     clusterGrouphealth.addLayer(poihealth);
+//     //map.addLayer(clusterGrouphealth);
+//   });
+/////
 fetch('urban/data/health.geojson')
   .then(res => res.json())
   .then(data => {
 
-    const poihealth = L.geoJSON(data, {
+    L.geoJSON(data, {
       pointToLayer: function (feature, latlng) {
-      //   return L.marker(latlng, { icon: healthIcon });
-      // },
-      const marker = L.marker(latlng, { icon: healthIcon });
 
-allPOIs.push({
-  layer: marker,
-  latlng: latlng,
-  category: 'health',
-  properties: feature.properties
-});
+        const type = feature.properties.Valeur_POI;
+        if (!healthLayers[type]) return null; // safety
 
-return marker;
-},
+        const marker = L.marker(latlng, { icon: healthIcon });
+
+        // 🔹 store for analysis (independent from visibility)
+        allPOIs.push({
+          layer: marker,
+          latlng: latlng,
+          category: 'health',
+          properties: feature.properties
+        });
+
+        return marker;
+      },
 
       onEachFeature: function (feature, layer) {
+        const type = feature.properties.Valeur_POI;
+        if (!healthLayers[type]) return;
+
         layer.bindPopup(`
           <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
-          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+          <b>Type :</b> ${type}
         `);
+
+        // 🔹 add to its category cluster
+        healthLayers[type].addLayer(layer);
       }
     });
 
-    clusterGrouphealth.addLayer(poihealth);
-    //map.addLayer(clusterGrouphealth);
   });
+
+
+
+
 /////
 
 
@@ -184,11 +238,21 @@ const baseMaps = {
   "Esri Topographie":topoesri
 };
 
+// const overlayMaps = {
+//   "Health": clusterGrouphealth
+// };
+
 const overlayMaps = {
-  "Health": clusterGrouphealth
+  "Hospitals": healthLayers['Hôpital'],
+  "Clinics": healthLayers['Clinique'],
+  "Dispensaries": healthLayers['Dispensaire'],
+  "Medical Centers": healthLayers['Centre médical'],
+  "Medical Offices": healthLayers['Cabinet médical'],
+  "Pharmacies": healthLayers['Pharmacie'],
+  "Laboratories": healthLayers['Laboratoire d’analyses'],
+  "Imaging Centers": healthLayers['Imagerie médicale'],
+  "Veterinary": healthLayers['Vétérinaire']
 };
-
-
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -721,6 +785,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
