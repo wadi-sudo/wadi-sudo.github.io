@@ -263,6 +263,144 @@ map.on('locationerror', function(e) {
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// Logic////////////////////////////
 
+// function distanceMeters(a, b) {
+//   return map.distance(a, b);
+// }
+
+// const healthConfig = {
+//   pharmacy: {
+//     icon: "💊",
+//     label: "Pharmacies",
+//     radius: 500,
+//     values: ["Pharmacie"],
+//     score: 20
+//   },
+//   primary: {
+//     icon: "🩺",
+//     label: "Primary Care",
+//     radius: 1000,
+//     values: [
+//       "Cabinet médical",
+//       "Centre médical",
+//       "Dispensaire"
+//     ],
+//     score: 30
+//   },
+//   diagnostic: {
+//     icon: "🧪",
+//     label: "Diagnostic",
+//     radius: 2000,
+//     values: [
+//       "Laboratoire d’analyses",
+//       "Imagerie médicale"
+//     ],
+//     score: 20
+//   },
+//   hospital: {
+//     icon: "🏥",
+//     label: "Hospital / Clinic",
+//     radius: 5000,
+//     values: [
+//       "Clinique",
+//       "Hôpital"
+//     ],
+//     score: 30
+//   }
+// };
+
+
+// function analyzeHealth(latlng) {
+//   let totalScore = 0;
+//   let breakdown = [];
+//   let categoriesFound = 0;
+
+//   for (const key in healthConfig) {
+//     const cfg = healthConfig[key];
+
+//     const found = allPOIs.filter(poi => {
+//       if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+//       return distanceMeters(latlng, poi.latlng) <= cfg.radius;
+//     });
+
+//     if (found.length > 0) {
+//       totalScore += cfg.score;
+//       categoriesFound++;
+//     }
+
+//     breakdown.push({
+//       icon: cfg.icon,
+//       label: cfg.label,
+//       count: found.length,
+//       radius: cfg.radius
+//     });
+//   }
+
+//   // Diversity bonus
+//   if (categoriesFound >= 3) {
+//     totalScore += 10;
+//   }
+
+//   return { totalScore, breakdown };
+// }
+
+
+
+// function interpretScore(score) {
+//   if (score >= 70) return { label: "GOOD", color: "green", icon: "🟢" };
+//   if (score >= 40) return { label: "MODERATE", color: "orange", icon: "🟠" };
+//   return { label: "POOR", color: "red", icon: "🔴" };
+// }
+
+
+// function buildPopup(result) {
+//   const status = interpretScore(result.totalScore);
+
+//   let html = `
+//     <b>📍 Health Accessibility Overview</b><br><br>
+//     ${status.icon} <b style="color:${status.color}">
+//       Overall Level: ${status.label}
+//     </b><br><br>
+//   `;
+
+//   result.breakdown.forEach(item => {
+//     html += `
+//       ${item.icon} ${item.label}: 
+//       <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
+//     `;
+//   });
+
+//   if (status.label === "POOR") {
+//     html += `<br>⚠ Limited access to healthcare services`;
+//   }
+
+//   return html;
+// }
+
+
+
+// let clickMarker = null;
+
+// map.on("click", function (e) {
+//   const latlng = e.latlng;
+
+//   if (clickMarker) {
+//     map.removeLayer(clickMarker);
+//   }
+// // console.log(allPOIs)
+//   clickMarker = L.circleMarker(latlng, {
+//     radius: 6,
+//     color: "#000",
+//     fillColor: "#fff",
+//     fillOpacity: 1
+//   }).addTo(map);
+
+//   const analysis = analyzeHealth(latlng);
+//   const popupHtml = buildPopup(analysis);
+
+//   clickMarker.bindPopup(popupHtml).openPopup();
+// });
+
+
 function distanceMeters(a, b) {
   return map.distance(a, b);
 }
@@ -271,61 +409,77 @@ const healthConfig = {
   pharmacy: {
     icon: "💊",
     label: "Pharmacies",
-    radius: 500,
+    radius: 1000,
     values: ["Pharmacie"],
-    score: 20
+    score: 15
   },
   primary: {
     icon: "🩺",
     label: "Primary Care",
-    radius: 1000,
+    radius: 1500,
     values: [
       "Cabinet médical",
       "Centre médical",
       "Dispensaire"
     ],
-    score: 30
+    score: 25
   },
-  diagnostic: {
+  laboratory: {
     icon: "🧪",
-    label: "Diagnostic",
+    label: "Laboratories",
     radius: 2000,
-    values: [
-      "Laboratoire d’analyses",
-      "Imagerie médicale"
-    ],
-    score: 20
+    values: ["Laboratoire d’analyses"],
+    score: 10
+  },
+  imaging: {
+    icon: "🩻",
+    label: "Imaging Centers",
+    radius: 2000,
+    values: ["Imagerie médicale"],
+    score: 10
+  },
+  clinic: {
+    icon: "🏨",
+    label: "Clinics",
+    radius: 3000,
+    values: ["Clinique"],
+    score: 15
   },
   hospital: {
     icon: "🏥",
-    label: "Hospital / Clinic",
+    label: "Hospitals",
     radius: 5000,
-    values: [
-      "Clinique",
-      "Hôpital"
-    ],
-    score: 30
+    values: ["Hôpital"],
+    score: 25
   }
 };
 
+const serviceDescriptions = {
+  "Primary Care":
+    "Medical offices, medical centers, and dispensaries."
+};
+let usedPOIs = [];
 
 function analyzeHealth(latlng) {
   let totalScore = 0;
   let breakdown = [];
-  let categoriesFound = 0;
+  let servicesFound = 0;
+  let usedPOIs = []; // ✅ NEW
 
   for (const key in healthConfig) {
     const cfg = healthConfig[key];
 
     const found = allPOIs.filter(poi => {
       if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
-      return distanceMeters(latlng, poi.latlng) <= cfg.radius;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
     });
 
     if (found.length > 0) {
       totalScore += cfg.score;
-      categoriesFound++;
+      servicesFound++;
     }
+
+    usedPOIs.push(...found); // ✅ NEW
 
     breakdown.push({
       icon: cfg.icon,
@@ -335,12 +489,16 @@ function analyzeHealth(latlng) {
     });
   }
 
-  // Diversity bonus
-  if (categoriesFound >= 3) {
+  // diversity bonus
+  if (servicesFound >= 4) {
     totalScore += 10;
   }
 
-  return { totalScore, breakdown };
+  return {
+    totalScore,
+    breakdown,
+    usedPOIs // ✅ NEW
+  };
 }
 
 
@@ -362,20 +520,30 @@ function buildPopup(result) {
     </b><br><br>
   `;
 
+  // result.breakdown.forEach(item => {
+  //   html += `
+  //     ${item.icon} ${item.label}: 
+  //     <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
+  //   `;
+  // });
   result.breakdown.forEach(item => {
-    html += `
-      ${item.icon} ${item.label}: 
-      <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
-    `;
-  });
+  html += `
+    ${item.icon} ${item.label}: 
+    <b>${item.count}</b> (≤ ${item.radius / 1000} km)
+    ${item.label === "Primary Care"
+      ? `<br><small style="color:#555;">${serviceDescriptions["Primary Care"]}</small>`
+      : ""}
+    <br>
+  `;
+});
+
 
   if (status.label === "POOR") {
-    html += `<br>⚠ Limited access to healthcare services`;
+    html += `<br>⚠ Limited access to essential healthcare services`;
   }
 
   return html;
 }
-
 
 
 let clickMarker = null;
@@ -386,7 +554,7 @@ map.on("click", function (e) {
   if (clickMarker) {
     map.removeLayer(clickMarker);
   }
-// console.log(allPOIs)
+
   clickMarker = L.circleMarker(latlng, {
     radius: 6,
     color: "#000",
@@ -398,7 +566,36 @@ map.on("click", function (e) {
   const popupHtml = buildPopup(analysis);
 
   clickMarker.bindPopup(popupHtml).openPopup();
+
+  // 🔦 HIGHLIGHT POIs USED IN ANALYSIS
+  if (analysis.usedPOIs && analysis.usedPOIs.length > 0) {
+    highlightPOIs(analysis.usedPOIs);
+    console.log('ok')
+  }
 });
+
+let highlightLayer = L.layerGroup().addTo(map);
+
+function highlightPOIs(pois) {
+  highlightLayer.clearLayers();
+
+  pois.forEach(poi => {
+    const highlightMarker = L.circleMarker(poi.latlng, {
+      radius: 5,
+      color: '#ff0000',
+      weight: 2,
+      fillColor: '#ff0000',
+      fillOpacity: 0.4
+    });
+
+    highlightLayer.addLayer(highlightMarker);
+  });
+
+  // auto-remove after 3 seconds
+  setTimeout(() => {
+    highlightLayer.clearLayers();
+  }, 3000);
+}
 
 
 
@@ -524,6 +721,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
