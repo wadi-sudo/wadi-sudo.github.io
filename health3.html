@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Urban Awareness</title>
+  <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="urban/plugin/L.Control.Sidebar.css" />
+  <script src="urban/plugin/L.Control.Sidebar.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
+<link rel="stylesheet" href="urban/plugin/style.css" />
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"
+/>
+
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="urban/plugin/L.Control.MousePosition.js"></script>
+<link rel="stylesheet" href="urban/plugin/L.Control.MousePosition.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+rel="stylesheet"
+>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+
+
+
+</head>
+
+<body>
+
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+
+    <a class="navbar-brand text-white" href="#" onclick="location.reload();" title="Click to reload the dashboard" style="justify-content: center;display: flex;align-items: center; width: 100%; text-wrap: inherit;">
+      <i class="fas fa-globe-africa me-2"></i>
+      Urban Awareness
+   
+    </a>
+    
+  </nav>
+
+<div id="map"></div>
+
+<div id="side-bar" style="background-color: #f1f1f1; font-family:Inter,sans-serif; font-size:14px;">
+  <a href="javascript:void(0)" class="closebtn" onclick="sidebarreturn()">&times;</a>
+  <br>
+  <div class="sidebar-content">
+    <h3>📊 Urban Score</h3>
+    <p>Measures access to nearby urban services. Diversity bonus if multiple categories are nearby.</p>
+
+    <details open>
+      <summary>🩺 Health</summary>
+      <ul>
+        <li>💊 Pharmacies (≤1 km): 15 pts</li>
+        <li>🩺 Primary Care (≤1.5 km): 25 pts<br><small style="color:#555;">Medical offices, centers & dispensaries</small></li>
+        <li>🧪 Laboratories (≤2 km): 10 pts</li>
+        <li>🩻 Imaging Centers (≤2 km): 10 pts</li>
+        <li>🏨 Clinics (≤3 km): 15 pts</li>
+        <li>🏥 Hospitals (≤5 km): 25 pts</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>🚓 Security</summary>
+      <ul>
+        <li>👮 Police (≤2 km): 30 pts</li>
+        <li>🪖 Garde nationale (≤3 km): 25 pts</li>
+        <li>🚒 Protection civile (≤4 km): 25 pts</li>
+        <li>🛃 Douane (≤5 km): 10 pts</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>🚌 Transport</summary>
+      <ul>
+        <li>🚕 Taxi stations (≤0.5 km): 10 pts</li>
+        <li>🚌 Bus stations (≤0.8 km): 15 pts</li>
+        <li>🚇 Metro stations (≤1 km): 20 pts</li>
+        <li>🚐 Louage stations (≤2 km): 15 pts</li>
+        <li>🚆 Train stations (≤3 km): 20 pts</li>
+      </ul>
+    </details>
+
+    <p><strong>Total Score Meaning:</strong></p>
+    <ul>
+      <li>≥160 → Good access 🟢</li>
+      <li>90–159 → Moderate access 🟠</li>
+      <li><90 → Poor access 🔴</li>
+    </ul>
+  </div>
+</div>
+
+
+  
+
+  <script>
+
+const map = L.map('map', {
+  center: [36.48, 9.61],
+  zoom: 8,
+  zoomControl: false  // disable default top-left zoom
+});
+
+    const topoesri = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+).addTo(map);
+// OpenStreetMap
+const osm = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }
+);
+
+// Esri Satellite Imagery
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+  'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+);
+
+
+const allPOIs = [];
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD GEOJSON DATA /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const healthIcon = L.icon({
+  iconUrl: 'urban/icons/red-cross.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGrouphealth = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+///
+const securityIcon = L.icon({
+  iconUrl: 'urban/icons/poisecurity.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGroupsecurity = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+/////
+const transportIcon = L.icon({
+  iconUrl: 'urban/icons/transportation.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGrouptransport = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+    // 3. Load your GeoJSON
+   
+
+
+fetch('urban/data/health.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poihealth = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: healthIcon });
+      // },
+      const marker = L.marker(latlng, { icon: healthIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'health',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGrouphealth.addLayer(poihealth);
+    // map.addLayer(clusterGrouphealth);
+  });
+/////
+fetch('urban/data/security.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poisecurity = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: securityIcon });
+      // },
+      const marker = L.marker(latlng, { icon: securityIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'security',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGroupsecurity.addLayer(poisecurity);
+    // map.addLayer(clusterGroupsecurity);
+  });
+/////
+fetch('urban/data/transport.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poitransport = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: transportIcon });
+      // },
+      const marker = L.marker(latlng, { icon: transportIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'transport',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGrouptransport.addLayer(poitransport);
+    // map.addLayer(clusterGrouptransport);
+  });
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// BASE MAPS/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const baseMaps = {
+  "OpenStreetMap": osm,
+  "Esri Satellite": esriSat,
+  "Esri Topographie":topoesri
+};
+
+
+
+const overlayMaps = {
+  "Health": clusterGrouphealth,
+  "Security": clusterGroupsecurity,
+  "Transportation": clusterGrouptransport
+};
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD EASY-BUTTONS /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+L.control.zoom({
+  position: 'topleft'
+}).addTo(map);
+
+function sidebarreturn() {
+				ctlSidebar.toggle();
+			}
+			ctlSidebar = L.control.sidebar("side-bar").addTo(map);
+			ctlEasybutton = L.easyButton("fa fa-bars", function () {
+				ctlSidebar.toggle();
+			})
+				.setPosition("topleft")
+				.addTo(map);
+
+L.easyButton({
+    position: 'topleft',       // top right corner
+    states: [{
+        stateName: 'go-to-page',
+        icon: 'fa-refresh',  // font awesome icon
+        title: 'Return to previous page',
+        onClick: function(btn, map){
+            window.location.href = './index.html'; // redirect
+        }
+    }]
+}).addTo(map);
+
+L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
+
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: true,
+  position: 'bottomleft'
+}).addTo(map);
+
+function showToast(message) {
+  const toast = L.control({ position: 'bottomright' });
+
+  toast.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-toast');
+    div.innerHTML = message;
+    // div.style.zIndex = '5000'
+    return div;
+  };
+
+  toast.addTo(map);
+
+  setTimeout(() => {
+    map.removeControl(toast);
+  }, 10000);
+}
+showToast('Click anywhere on the map')
+
+
+map.locate({ setView: false, maxZoom: 16 });
+
+// When location is found, fly to it
+map.on('locationfound', function(e) {
+    map.flyTo(e.latlng, 14); // Zoom 16, you can adjust
+   
+});
+
+// If location is not found
+map.on('locationerror', function(e) {
+    showToast("Could not get your location.");
+});
+///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// Logic////////////////////////////
+
+function distanceMeters(a, b) {
+  return map.distance(a, b);
+}
+
+const securityConfig = {
+  police: {
+    icon: "👮",
+    label: "Police",
+    radius: 2000,
+    values: ["Police"],
+    score: 30
+  },
+  gendarmerie: {
+    icon: "🪖",
+    label: "Garde nationale",
+    radius: 3000,
+    values: ["Garde nationale"],
+    score: 25
+  },
+  civil: {
+    icon: "🚒",
+    label: "Protection civile",
+    radius: 4000,
+    values: ["Protection civile"],
+    score: 25
+  },
+  customs: {
+    icon: "🛃",
+    label: "Douane",
+    radius: 5000,
+    values: ["Douane"],
+    score: 10
+  }
+};
+const transportConfig = {
+  taxi: {
+    icon: "🚕",
+    label: "Taxi stations",
+    radius: 500,
+    values: ["Station taxi"],
+    score: 10
+  },
+  bus: {
+    icon: "🚌",
+    label: "Bus stations",
+    radius: 800,
+    values: ["Station bus"],
+    score: 15
+  },
+  metro: {
+    icon: "🚇",
+    label: "Metro stations",
+    radius: 1000,
+    values: ["Station metro"],
+    score: 20
+  },
+  louage: {
+    icon: "🚐",
+    label: "Louage stations",
+    radius: 2000,
+    values: ["Station louage"],
+    score: 15
+  },
+  rail: {
+    icon: "🚆",
+    label: "Train stations",
+    radius: 3000,
+    values: ["Gare"],
+    score: 20
+  }
+};
+
+
+const healthConfig = {
+  pharmacy: {
+    icon: "💊",
+    label: "Pharmacies",
+    radius: 1000,
+    values: ["Pharmacie"],
+    score: 15
+  },
+  primary: {
+    icon: "🩺",
+    label: "Primary Care",
+    radius: 1500,
+    values: [
+      "Cabinet médical",
+      "Centre médical",
+      "Dispensaire"
+    ],
+    score: 25
+  },
+  laboratory: {
+    icon: "🧪",
+    label: "Laboratories",
+    radius: 2000,
+    values: ["Laboratoire d’analyses"],
+    score: 10
+  },
+  imaging: {
+    icon: "🩻",
+    label: "Imaging Centers",
+    radius: 2000,
+    values: ["Imagerie médicale"],
+    score: 10
+  },
+  clinic: {
+    icon: "🏨",
+    label: "Clinics",
+    radius: 3000,
+    values: ["Clinique"],
+    score: 15
+  },
+  hospital: {
+    icon: "🏥",
+    label: "Hospitals",
+    radius: 5000,
+    values: ["Hôpital"],
+    score: 25
+  }
+};
+
+const serviceDescriptions = {
+  "Primary Care":
+    "Medical offices, medical centers, and dispensaries."
+};
+let usedPOIs = [];
+
+function analyzeHealth(latlng) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = []; // ✅ NEW
+
+  for (const key in healthConfig) {
+    const cfg = healthConfig[key];
+
+    const found = allPOIs.filter(poi => {
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found); // ✅ NEW
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  // diversity bonus
+  if (servicesFound >= 4) {
+    totalScore += 10;
+  }
+
+  return {
+    totalScore,
+    breakdown,
+    usedPOIs // ✅ NEW
+  };
+}
+
+function analyzeSecurity(latlng) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = [];
+
+  for (const key in securityConfig) {
+    const cfg = securityConfig[key];
+
+    const found = allPOIs.filter(poi => {
+      if (poi.category !== 'security') return false;
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found);
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  if (servicesFound >= 3) {
+    totalScore += 10;
+  }
+
+  return { totalScore, breakdown, usedPOIs };
+}
+function analyzeTransport(latlng) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = [];
+
+  for (const key in transportConfig) {
+    const cfg = transportConfig[key];
+
+    const found = allPOIs.filter(poi => {
+      if (poi.category !== 'transport') return false;
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found);
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  if (servicesFound >= 3) {
+    totalScore += 10;
+  }
+
+  return { totalScore, breakdown, usedPOIs };
+}
+
+
+function interpretScore(score) {
+  if (score >= 70) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 40) return { label: "MODERATE", color: "orange", icon: "🟠" };
+  return { label: "POOR", color: "red", icon: "🔴" };
+}
+
+function interpretTotalScore(score) {
+  if (score >= 160) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 90) return { label: "MODERATE", color: "orange", icon: "🟠" };
+  return { label: "POOR", color: "red", icon: "🔴" };
+}
+
+// -------------------- Floating Score Badge --------------------
+const scoreBadge = L.control({ position: 'topright' });
+
+scoreBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'score-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = 'Area Score: –';
+  return div;
+};
+scoreBadge.addTo(map);
+
+
+function updateGlobalBadge(score) {
+  const status = interpretTotalScore(score);
+  const div = document.querySelector('.score-badge');
+  div.innerHTML = `
+    Total Score: ${score}<br>
+    ${status.icon} ${status.label}
+  `;
+}
+
+// -------------------- Popup Builder --------------------
+
+function renderDomainSection(title, icon, result, open = false) {
+
+const status = interpretScore(result.totalScore);
+
+let html = `
+  <details ${open ? "open" : ""} style="margin-top:6px">
+    <summary style="
+      cursor:pointer;
+      font-weight:600;
+      outline:none;
+    ">
+      ${icon} ${title}
+      <span style="color:${status.color}; margin-left:6px">
+        ${status.icon} ${status.label}
+      </span>
+      <small>(${result.totalScore})</small>
+    </summary>
+
+    <ul style="padding-left:18px; margin:6px 0;">
+`;
+
+result.breakdown.forEach(item => {
+  if (item.count > 0) {
+    html += `
+      <li>
+        ${item.icon} ${item.label}:
+        <b>${item.count}</b>
+        <small>(≤${item.radius / 1000} km)</small>
+        ${
+          item.label === "Primary Care"
+            ? `<br><small style="color:#555">
+                 Medical offices, medical centers & dispensaries
+               </small>`
+            : ""
+        }
+      </li>
+    `;
+  }
+});
+
+if (result.breakdown.filter(b => b.count > 0).length >= 4) {
+  html += `<li>🎁 Diversity bonus: +10</li>`;
+}
+
+html += `
+    </ul>
+  </details>
+`;
+
+return html;
+}
+
+
+function buildPopup(health, security, transport) {
+
+const totalScore =
+  health.totalScore +
+  security.totalScore +
+  transport.totalScore;
+
+  updateGlobalBadge(totalScore);
+
+let html = `
+  <div style="font-family:Inter,sans-serif; font-size:14px; line-height:1.4">
+    <b>📍 Area Overview</b><br>
+    <small style="color:#666">
+      Click a section to view nearby services and distances
+    </small>
+`;
+
+html += renderDomainSection("Health", "🩺", health); // open by default
+html += renderDomainSection("Security", "🚓", security);
+html += renderDomainSection("Transport", "🚌", transport,true);
+
+html += `
+    <hr style="margin:6px 0">
+    <small style="color:#555">
+      Scores are calculated independently using proximity-based
+      spatial analysis.
+    </small>
+  </div>
+`;
+
+return html;
+}
+
+// -------------------- Click Event with Highlights --------------------
+let clickMarker = null;
+let highlightLayer = L.layerGroup().addTo(map);
+
+map.on("click", function(e) {
+
+if (clickMarker) map.removeLayer(clickMarker);
+
+clickMarker = L.circleMarker(e.latlng, {
+  radius: 6,
+  color: "#000",
+  fillColor: "#fff",
+  fillOpacity: 1
+}).addTo(map);
+
+const health = analyzeHealth(e.latlng);
+const security = analyzeSecurity(e.latlng);
+const transport = analyzeTransport(e.latlng);
+
+const popupHtml = buildPopup(health, security, transport);
+
+clickMarker.bindPopup(popupHtml).openPopup();
+
+highlightPOIs([
+  ...health.usedPOIs,
+  ...security.usedPOIs,
+  ...transport.usedPOIs
+]);
+});
+
+
+function highlightPOIs(pois) {
+  highlightLayer.clearLayers();
+
+  pois.forEach(poi => {
+    const highlightMarker = L.circleMarker(poi.latlng, {
+      radius: 6,
+      color: '#ff0000',
+      weight: 2,
+      fillColor: '#ff0000',
+      fillOpacity: 0.3
+    });
+    highlightLayer.addLayer(highlightMarker);
+  });
+
+  // Auto-remove after 6 seconds
+  setTimeout(() => {
+    highlightLayer.clearLayers();
+  }, 6000);
+}
+
+
+
+
+//////////////////////////////////////////////////////// osm/////////////////////////////
+
+///////////// osmsearch////////
+const osmSearchControl = L.control({ position: 'topright' });
+
+osmSearchControl.onAdd = function () {
+
+  const container = L.DomUtil.create('div', 'leaflet-bar bg-white p-2');
+  container.style.width = '240px';
+
+  container.innerHTML = `
+    <input
+      id="osm-search-input"
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="Search place OSM(Tunisia)"
+      autocomplete="off"
+    >
+    <div id="osm-results" class="list-group mt-1"></div>
+  `;
+
+  L.DomEvent.disableClickPropagation(container);
+
+  return container;
+};
+
+osmSearchControl.addTo(map);
+
+
+let osmMarker = null;
+let osmMarkerTimeout = null;
+let osmSearchTimer = null;
+
+const osmInput = document.getElementById('osm-search-input');
+const osmResults = document.getElementById('osm-results');
+
+osmInput.addEventListener('input', function () {
+
+  const query = this.value.trim();
+  osmResults.innerHTML = '';
+
+  if (query.length < 3) return;
+
+  clearTimeout(osmSearchTimer);
+
+  osmSearchTimer = setTimeout(() => {
+
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json` +
+      `&q=${encodeURIComponent(query)}` +
+      `&countrycodes=tn` +
+      `&addressdetails=1` +
+      `&limit=5`;
+
+    fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'UrbanAnalysisGIS/1.0'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+
+      osmResults.innerHTML = '';
+
+      if (!data.length) return;
+
+      data.forEach(place => {
+
+        const item = document.createElement('button');
+        item.className = 'list-group-item list-group-item-action';
+        item.style.fontSize = '12px';
+
+        item.innerHTML = `
+          <strong>${place.name || place.display_name.split(',')[0]}</strong><br>
+          <small class="text-muted">${place.display_name}</small>
+        `;
+
+        item.onclick = () => zoomToOSMPlace(place);
+
+        osmResults.appendChild(item);
+      });
+    });
+
+  }, 300); // debounce
+});
+
+
+function zoomToOSMPlace(place) {
+
+  const lat = parseFloat(place.lat);
+  const lon = parseFloat(place.lon);
+
+  // remove previous marker + timer
+  if (osmMarker) map.removeLayer(osmMarker);
+  if (osmMarkerTimeout) clearTimeout(osmMarkerTimeout);
+
+  osmMarker = L.marker([lat, lon])
+    .addTo(map)
+    .bindPopup(`<b>${place.display_name}</b>`)
+    .openPopup();
+
+  map.setView([lat, lon], 15);
+
+  // auto remove marker after 5 seconds
+  osmMarkerTimeout = setTimeout(() => {
+    if (osmMarker) {
+      map.removeLayer(osmMarker);
+      osmMarker = null;
+    }
+  }, 5000);
+
+  osmResults.innerHTML = '';
+}
+
+map.on('click', () => {
+  osmResults.innerHTML = '';
+});
+
+
+
+
+
+
+  </script>
+</body>
+</html>
+
+
