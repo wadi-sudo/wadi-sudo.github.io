@@ -59,20 +59,25 @@ rel="stylesheet"
     >
     <br>
     <div class="sidebar-content">
-      <h2> 🩺 Health Accessibility</h2>
-      <p>
-        Click on the map to view a health accessibility summary for that location.</p>
- <p>
-The score is based on nearby healthcare services:
-
-Primary care refers to medical offices, medical centers, and dispensaries.
-
-Diagnostic services include medical laboratories and medical imaging centers.
-</p>
-		 <p>
-Results indicate whether the area is well, moderately, or poorly served, helping users quickly understand local healthcare availability.
-      
- </p>     
+     <h3> 🩺 Health Score</h3>
+ 
+ <p>Measures access to nearby healthcare services. A <strong>bonus +10</strong> is added if more than 4 categories are nearby.</p>
+ 
+ <ul>
+   <li>💊 <strong>Pharmacies:</strong> 15 pts (≤1 km)</li>
+   <li>🩺 <strong>Primary Care:</strong> 25 pts (≤1.5 km)</li>
+   <li>🧪 <strong>Laboratories:</strong> 10 pts (≤2 km)</li>
+   <li>🩻 <strong>Imaging Centers:</strong> 10 pts (≤2 km)</li>
+   <li>🏨 <strong>Clinics:</strong> 15 pts (≤3 km)</li>
+   <li>🏥 <strong>Hospitals:</strong> 25 pts (≤5 km)</li>
+ </ul>
+ 
+ <p><strong>Score Meaning:</strong></p>
+ <ul>
+   <li>≥70 → Good access</li>
+   <li>40–69 → Moderate access</li>
+   <li><40 → Poor access</li>
+ </ul>   
     
     </div>
     
@@ -785,6 +790,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
