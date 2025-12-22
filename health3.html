@@ -579,37 +579,84 @@ function interpretScore(score) {
 }
 
 
+// function buildPopup(result) {
+//   const status = interpretScore(result.totalScore);
+
+//   let html = `
+//     <b>📍 Health Accessibility Overview</b><br><br>
+//     ${status.icon} <b style="color:${status.color}">
+//       Overall Level: ${status.label}
+//     </b><br><br>
+//   `;
+
+//   // result.breakdown.forEach(item => {
+//   //   html += `
+//   //     ${item.icon} ${item.label}: 
+//   //     <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
+//   //   `;
+//   // });
+//   result.breakdown.forEach(item => {
+//   html += `
+//     ${item.icon} ${item.label}: 
+//     <b>${item.count}</b> (≤ ${item.radius / 1000} km)
+//     ${item.label === "Primary Care"
+//       ? `<br><small style="color:#555;">${serviceDescriptions["Primary Care"]}</small>`
+//       : ""}
+//     <br>
+//   `;
+// });
+
+
+//   if (status.label === "POOR") {
+//     html += `<br>⚠ Limited access to essential healthcare services`;
+//   }
+
+//   return html;
+// }
+
 function buildPopup(result) {
   const status = interpretScore(result.totalScore);
 
   let html = `
-    <b>📍 Health Accessibility Overview</b><br><br>
-    ${status.icon} <b style="color:${status.color}">
-      Overall Level: ${status.label}
-    </b><br><br>
+    <div style="font-family:Inter,sans-serif; font-size:14px; line-height:1.4;">
+      <b>📍 Health Accessibility</b><br>
+      ${status.icon} <b style="color:${status.color}">Overall: ${status.label}</b><br>
+      <small>Total Score: ${result.totalScore}</small><br><br>
+
+      <b>Nearby Services:</b>
+      <ul style="padding-left:20px; margin:5px 0;">
   `;
 
-  // result.breakdown.forEach(item => {
-  //   html += `
-  //     ${item.icon} ${item.label}: 
-  //     <b>${item.count}</b> (≤ ${item.radius / 1000} km)<br>
-  //   `;
-  // });
   result.breakdown.forEach(item => {
-  html += `
-    ${item.icon} ${item.label}: 
-    <b>${item.count}</b> (≤ ${item.radius / 1000} km)
-    ${item.label === "Primary Care"
-      ? `<br><small style="color:#555;">${serviceDescriptions["Primary Care"]}</small>`
-      : ""}
-    <br>
-  `;
-});
+    if (item.count > 0) {
+      html += `
+        <li>
+          ${item.icon} ${item.label}: <b>${item.count}</b> (≤${item.radius/1000} km)
+          ${item.label === "Primary Care" ? 
+            `<br><small style="color:#555;">Medical offices, centers, and dispensaries.</small>` 
+            : ""}
+        </li>
+      `;
+    }
+  });
 
-
-  if (status.label === "POOR") {
-    html += `<br>⚠ Limited access to essential healthcare services`;
+  // Diversity bonus
+  if (result.totalScore >= 10 && result.breakdown.filter(b => b.count > 0).length >= 4) {
+    html += `<li>🎁 Diversity Bonus: +10 points (≥4 categories)</li>`;
   }
+
+  html += `</ul>`;
+
+  // Status note
+  if (status.label === "POOR") {
+    html += `<small style="color:red;">⚠ Limited access to essential healthcare services</small>`;
+  } else if (status.label === "MODERATE") {
+    html += `<small style="color:orange;">Moderate access to healthcare services</small>`;
+  } else {
+    html += `<small style="color:green;">Good access to healthcare services</small>`;
+  }
+
+  html += `</div>`;
 
   return html;
 }
@@ -790,6 +837,7 @@ map.on('click', () => {
   </script>
 </body>
 </html>
+
 
 
 
