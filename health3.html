@@ -34,6 +34,7 @@ rel="stylesheet"
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
 
 
@@ -500,7 +501,7 @@ const healthConfig = {
 
 const serviceDescriptions = {
   "Primary Care":
-    "Medical offices, medical centers, and dispensaries."
+    "Medical offices, centers, and dispensaries."
 };
 let usedPOIs = [];
 
@@ -694,7 +695,7 @@ result.breakdown.forEach(item => {
         ${
           item.label === "Primary Care"
             ? `<br><small style="color:#555">
-                 Medical offices, medical centers & dispensaries
+                 Medical offices, centers & dispensaries
                </small>`
             : ""
         }
@@ -737,8 +738,7 @@ html += renderDomainSection("Transport", "🚌", transport,true);
 html += `
     <hr style="margin:6px 0">
     <small style="color:#555">
-      Scores are calculated independently using proximity-based
-      spatial analysis.
+      Proximity-based spatial analysis Scores.
     </small>
   </div>
 `;
@@ -920,7 +920,61 @@ map.on('click', () => {
   osmResults.innerHTML = '';
 });
 
+///////////////////////////////// heat//////////////////////////////////////
+let heatmapLayer = null;
 
+const heatmapControl = L.control({ position: 'bottomright' });
+
+heatmapControl.onAdd = function () {
+  const div = L.DomUtil.create('div', 'heatmap-control');
+  div.innerHTML = `
+    <label><b>Heatmap category</b></label>
+    <select id="heatmapSelect" class="form-select form-select-sm">
+      <option value="">-- None --</option>
+    <option value="health">🩺 Health</option>
+    <option value="security">👮 Security</option>
+    <option value="transport">🚌 Transport</option>
+    </select>
+  `;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+
+heatmapControl.addTo(map);
+////////////////////////////////
+
+document.getElementById('heatmapSelect').addEventListener('change', function () {
+  const category = this.value;
+
+  // remove old heatmap if exists
+  if (heatmapLayer) {
+    map.removeLayer(heatmapLayer);
+    heatmapLayer = null;
+  }
+
+  if (!category) return; // None selected
+
+  // get latlngs of POIs in this category
+  const points = allPOIs
+    .filter(poi => poi.category === category)
+    .map(poi => [poi.latlng.lat, poi.latlng.lng, 15]); // last value = intensity
+
+  if (points.length === 0) return;
+
+  heatmapLayer = L.heatLayer(points, {
+  radius: map.getZoom() * 2 + 10, // increases radius when zooming out
+  blur: 20,
+  maxZoom: 17,
+  gradient: {
+    0.2: '#2a9d8f',
+    0.4: '#f4a261',
+    0.6: '#e76f51',
+    0.8: '#e63946',
+    1.0: '#d62828'
+  }
+}).addTo(map);
+
+});
 
 
 
@@ -928,6 +982,5 @@ map.on('click', () => {
   </script>
 </body>
 </html>
-
 
 
