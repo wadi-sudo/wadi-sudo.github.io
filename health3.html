@@ -60,7 +60,10 @@ rel="stylesheet"
   <br>
   <div class="sidebar-content">
     <h3>📊 Urban Score</h3>
-    <p>Measures access to nearby urban services. Diversity bonus if multiple categories are nearby.</p>
+    <p>
+    Measures access to nearby urban services using proximity-based spatial analysis.
+    A diversity bonus is applied when multiple service categories are available.
+    </p>
 
     <details open>
       <summary>🩺 Health</summary>
@@ -94,13 +97,41 @@ rel="stylesheet"
         <li>🚆 Train stations (≤3 km): 20 pts</li>
       </ul>
     </details>
+    <hr>
+ <h2>👥 Population Adjustment</h2>
 
+  <p>
+    To better reflect real urban conditions, the final score is adjusted using
+    <b>population pressure</b>.
+  </p>
+
+  <p>
+    Each clicked location is linked to its corresponding
+    <b>governorate</b>, from which an official population value is retrieved.
+    This value is normalized to produce a <b>Population Pressure Score</b>
+    between <b>0</b> (low pressure) and <b>1</b> (high pressure).
+  </p>
+
+  <p><b>Final score formula:</b></p>
+
+  <pre style="background:#eee;padding:8px;border-radius:6px;font-size:13px">
+Final Score = Accessibility Score × (0.7 + 0.3 × Population Pressure)
+  </pre>
+
+  <p style="font-size:13px;color:#555">
+    • 70% of the score reflects access to urban services (POI proximity)<br>
+    • 30% reflects population-induced urban pressure
+  </p>
+
+
+  <hr>
     <p><strong>Total Score Meaning:</strong></p>
-    <ul>
-      <li>≥160 → Good access 🟢</li>
-      <li>90–159 → Moderate access 🟠</li>
-      <li><90 → Poor access 🔴</li>
-    </ul>
+ <ul>
+  <li>≥130 → Good access 🟢</li>
+  <li>70–129 → Moderate access 🟠</li>
+  <li> <70 → Poor access 🔴</li>
+</ul>
+
   </div>
 </div>
 
@@ -626,9 +657,14 @@ function interpretScore(score) {
   return { label: "POOR", color: "red", icon: "🔴" };
 }
 
+// function interpretTotalScore(score) {
+//   if (score >= 160) return { label: "GOOD", color: "green", icon: "🟢" };
+//   if (score >= 90) return { label: "MODERATE", color: "orange", icon: "🟠" };
+//   return { label: "POOR", color: "red", icon: "🔴" };
+// }
 function interpretTotalScore(score) {
-  if (score >= 160) return { label: "GOOD", color: "green", icon: "🟢" };
-  if (score >= 90) return { label: "MODERATE", color: "orange", icon: "🟠" };
+  if (score >= 130) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 70)  return { label: "MODERATE", color: "orange", icon: "🟠" };
   return { label: "POOR", color: "red", icon: "🔴" };
 }
 
@@ -717,13 +753,16 @@ return html;
 }
 
 
-function buildPopup(health, security, transport,nearestDistances) {
+function buildPopup(health, security, transport,nearestDistances,population) {
 
-const totalScore =
+let totalScore =
   health.totalScore +
   security.totalScore +
   transport.totalScore;
-
+if (population) {
+  const factor = 0.7 + 0.3 * population.pressureScore;
+  totalScore = Math.round(totalScore * factor);
+}
   updateGlobalBadge(totalScore);
 
 let html = `
@@ -780,6 +819,23 @@ if (nearestDistances.length) {
     </details>
   `;
 }
+
+if (population) {
+  html += `
+    <details style="margin-top:6px">
+      <summary style="cursor:pointer;font-weight:600">
+        👥 Population context
+      </summary>
+
+      <ul style="padding-left:18px; margin:6px 0;">
+        <li><b>Governorate:</b> ${population.governorate}</li>
+        <li><b>Population:</b> ${population.population.toLocaleString()}</li>
+        <li><b>Pressure level:</b> ${population.level}</li>
+      </ul>
+    </details>
+  `;
+}
+
 return html;
 }
 
@@ -802,7 +858,8 @@ const health = analyzeHealth(e.latlng);
 const security = analyzeSecurity(e.latlng);
 const transport = analyzeTransport(e.latlng);
 const nearestDistances = runNearestAnalysis(e.latlng);
-const popupHtml = buildPopup(health, security, transport,nearestDistances);
+const population = analyzePopulation(e.latlng);
+const popupHtml = buildPopup(health, security, transport,nearestDistances,population);
 
 clickMarker.bindPopup(popupHtml).openPopup();
 
@@ -1124,15 +1181,83 @@ L.circleMarker(nearest.latlng, {
   return distances;
 }
 
+////////////////////////////Population Analysis///////////////////
 
+// ================= POPULATION LAYER =================
+let govLayer = null;
+let govFeatures = [];
+let popMin = Infinity;
+let popMax = -Infinity;
 
+fetch('urban/data/gov.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    govLayer = L.geoJSON(data, {
+      style: {
+        color: '#555',
+        weight: 2,
+        fillOpacity: 0
+      }
+    });
+
+    govFeatures = data.features;
+
+    // compute min / max population once
+    govFeatures.forEach(f => {
+      const pop = Number(f.properties.population);
+      if (!isNaN(pop)) {
+        popMin = Math.min(popMin, pop);
+        popMax = Math.max(popMax, pop);
+      }
+    });
+
+    console.log('Population range:', popMin, popMax);
+  });
+///////
+
+// ================= POPULATION ANALYSIS =================
+function analyzePopulation(latlng) {
+  if (!govFeatures.length) return null;
+
+  let foundGov = null;
+
+  govFeatures.forEach(feature => {
+    const layer = L.geoJSON(feature);
+    if (layer.getBounds().contains(latlng)) {
+      foundGov = feature;
+    }
+  });
+
+  if (!foundGov) return null;
+
+  const population = Number(foundGov.properties.population);
+  const name = foundGov.properties.NAME_1 || 'Unknown';
+
+  // normalize population
+  const norm =
+    popMax === popMin
+      ? 0
+      : (population - popMin) / (popMax - popMin);
+
+  // pressure score (inverse logic)
+  const pressureScore = 1 - norm;
+
+  // qualitative label
+  let level = 'LOW 🟢';
+  if (norm > 0.66) level = 'HIGH 🔴';
+  else if (norm > 0.33) level = 'MODERATE 🟠';
+
+  return {
+    governorate: name,
+    population: population,
+    norm,
+    pressureScore,
+    level
+  };
+}
 
 
   </script>
 </body>
 </html>
-
-
-
-
-
