@@ -717,7 +717,7 @@ return html;
 }
 
 
-function buildPopup(health, security, transport) {
+function buildPopup(health, security, transport,nearestDistances) {
 
 const totalScore =
   health.totalScore +
@@ -742,7 +742,44 @@ html += `
     </small>
   </div>
 `;
+if (nearestDistances.length) {
+  html += `
+    <details style="margin-top:6px">
+      <summary style="
+        cursor:pointer;
+        font-weight:600;
+        outline:none;
+      ">
+        📏 Nearest key services
+      </summary>
 
+      <ul style="padding-left:18px; margin:6px 0;">
+  `;
+
+  // nearestDistances.forEach(d => {
+  //   html += `
+  //     <li>
+  //       ${d.label}:
+  //       <b>${(d.distance / 1000).toFixed(1)} km</b>
+  //     </li>
+  //   `;
+  // });
+  nearestDistances.forEach(d => {
+  const color = valeurPOIColors[d.value] || '#333';
+  html += `
+    <li>
+      <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
+      ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
+    </li>
+  `;
+});
+
+
+  html += `
+      </ul>
+    </details>
+  `;
+}
 return html;
 }
 
@@ -764,16 +801,16 @@ clickMarker = L.circleMarker(e.latlng, {
 const health = analyzeHealth(e.latlng);
 const security = analyzeSecurity(e.latlng);
 const transport = analyzeTransport(e.latlng);
-
-const popupHtml = buildPopup(health, security, transport);
+const nearestDistances = runNearestAnalysis(e.latlng);
+const popupHtml = buildPopup(health, security, transport,nearestDistances);
 
 clickMarker.bindPopup(popupHtml).openPopup();
 
-highlightPOIs([
-  ...health.usedPOIs,
-  ...security.usedPOIs,
-  ...transport.usedPOIs
-]);
+// highlightPOIs([
+//   ...health.usedPOIs,
+//   ...security.usedPOIs,
+//   ...transport.usedPOIs
+// ]);
 });
 
 
@@ -966,12 +1003,134 @@ document.getElementById('heatmapSelect').addEventListener('change', function () 
 
 });
 
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// NEAREST /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Layer for nearest analysis (separate from highlightLayer)
+const nearestLayer = L.layerGroup().addTo(map);
+
+// Style per domain
+const nearestStyles = {
+  health: { color: '#e63946' },
+  security: { color: '#457b9d' },
+  transport: { color: '#2a9d8f' }
+};
+
+const nearestServices = [
+  // Health
+  { value: "Hôpital", category: "health", label: "Hospital" },
+  { value: "Clinique", category: "health", label: "Clinic" },
+
+  // Security
+  { value: "Police", category: "security", label: "Police" },
+  { value: "Protection civile", category: "security", label: "Fire station" },
+  { value: "Garde nationale", category: "security", label: "Gendarmerie" },
+
+  // Transport
+  { value: "Gare", category: "transport", label: "Train station" },
+  { value: "Station metro", category: "transport", label: "Metro station" }
+];
+const valeurPOIColors = {
+  "Police": "#1f77b4",          // blue
+  "Garde nationale": "#ff7f0e",  // orange
+  "Protection civile": "#2ca02c",// green
+  "Douane": "#d62728",           // red
+  "Station taxi": "#9467bd",     // purple
+  "Station bus": "#8c564b",      // brown
+  "Station metro": "#e377c2",    // pink
+  "Station louage": "#7f7f7f",   // gray
+  "Gare": "#bcbd22",             // olive
+  "Pharmacie": "#17becf",        // cyan
+  "Cabinet médical": "#aec7e8",  // light blue
+  "Centre médical": "#ffbb78",
+  "Dispensaire": "#98df8a",
+  "Laboratoire d’analyses": "#ff9896",
+  "Imagerie médicale": "#c5b0d5",
+  "Clinique": "#c49c94",
+  "Hôpital": "#f7b6d2"
+};
+
+
+function runNearestAnalysis(clickLatLng) {
+  nearestLayer.clearLayers();
+
+  const distances = [];
+
+  nearestServices.forEach(service => {
+    let nearest = null;
+    let minDistance = Infinity;
+
+    allPOIs.forEach(poi => {
+      if (poi.category !== service.category) return;
+      if (poi.properties.Valeur_POI !== service.value) return;
+
+      const d = map.distance(clickLatLng, poi.latlng);
+      if (d < minDistance) {
+        minDistance = d;
+        nearest = poi;
+      }
+    });
+
+    if (!nearest) return;
+
+    const style = nearestStyles[service.category] || { color: '#333' };
+
+    // draw dashed line
+    // L.polyline(
+    //   [clickLatLng, nearest.latlng],
+    //   {
+    //     color: style.color,
+    //     weight: 2,
+    //     opacity: 0.7,
+    //     dashArray: '5,5'
+    //   }
+    // ).addTo(nearestLayer);
+
+    // // highlight nearest POI
+    // L.circleMarker(nearest.latlng, {
+    //   radius: 7,
+    //   color: style.color,
+    //   weight: 2,
+    //   fillOpacity: 0.9
+    // }).addTo(nearestLayer);
+
+ L.polyline(
+  [clickLatLng, nearest.latlng],
+  {
+    color: valeurPOIColors[nearest.properties.Valeur_POI] || '#333',
+    weight: 3,
+    dashArray: '5,5'
+  }
+).addTo(nearestLayer);
+
+// highlight nearest POI
+L.circleMarker(nearest.latlng, {
+  radius: 7,
+  color: valeurPOIColors[nearest.properties.Valeur_POI] || '#333',
+  fillOpacity: 0.9
+}).addTo(nearestLayer);
+
+    distances.push({
+      value: service.value,
+      label: service.label,
+      distance: minDistance
+    });
+  });
+
+  // auto clear after 6 seconds
+  // setTimeout(() => nearestLayer.clearLayers(), 6000);
+
+  return distances;
+}
+
+
 
 
 
   </script>
 </body>
 </html>
+
 
 
 
