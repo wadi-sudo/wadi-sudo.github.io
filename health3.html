@@ -958,9 +958,10 @@ heatmapControl.onAdd = function () {
     <label><b>Heatmap category</b></label>
     <select id="heatmapSelect" class="form-select form-select-sm">
       <option value="">-- None --</option>
-    <option value="health">🩺 Health</option>
-    <option value="security">👮 Security</option>
-    <option value="transport">🚌 Transport</option>
+    <option value="Hôpital">🏥 Hospital</option>
+    <option value="Clinique">🏨 Clinic</option>   
+    <option value="Station metro">🚇 Metro </option>
+    <option value="Gare">🚆 Train </option>
     </select>
   `;
   L.DomEvent.disableClickPropagation(div);
@@ -983,7 +984,7 @@ document.getElementById('heatmapSelect').addEventListener('change', function () 
 
   // get latlngs of POIs in this category
   const points = allPOIs
-    .filter(poi => poi.category === category)
+    .filter(poi => poi.properties.Valeur_POI === category)
     .map(poi => [poi.latlng.lat, poi.latlng.lng, 15]); // last value = intensity
 
   if (points.length === 0) return;
@@ -1130,6 +1131,7 @@ L.circleMarker(nearest.latlng, {
   </script>
 </body>
 </html>
+
 
 
 
