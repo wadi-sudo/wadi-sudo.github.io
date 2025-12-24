@@ -37,6 +37,13 @@ rel="stylesheet"
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
 
+<!-- Leaflet Routing Machine -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+/>
+
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
 
 </head>
 
@@ -805,11 +812,36 @@ if (nearestDistances.length) {
   // });
   nearestDistances.forEach(d => {
   const color = valeurPOIColors[d.value] || '#333';
+  // html += `
+  //   <li>
+  //     <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
+  //     ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
+  //   </li>
+  // `;
   html += `
-    <li>
-      <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
-      ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
-    </li>
+  <li style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+  <div>
+    <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
+    ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
+  </div>
+
+  <button
+    onclick="routeToPOI(L.latLng(${d.lat}, ${d.lng}))"
+    style="
+      border:none;
+      background:#0d6efd;
+      color:white;
+      padding:1px 6px;
+      margin-bottom:2px;
+      font-size:12px;
+      border-radius:6px;
+      cursor:pointer;
+    ">
+        <i class="fas fa-route"></i>
+
+  </button>
+</li>
+
   `;
 });
 
@@ -844,7 +876,13 @@ let clickMarker = null;
 let highlightLayer = L.layerGroup().addTo(map);
 
 map.on("click", function(e) {
+  lastClickLatLng = e.latlng; // ✅ store origin for routing
 
+  // REMOVE routing if user clicks again
+  if (routingControl) {
+    map.removeControl(routingControl);
+    routingControl = null;
+  }
 if (clickMarker) map.removeLayer(clickMarker);
 
 clickMarker = L.circleMarker(e.latlng, {
@@ -1171,7 +1209,9 @@ L.circleMarker(nearest.latlng, {
     distances.push({
       value: service.value,
       label: service.label,
-      distance: minDistance
+      distance: minDistance,
+      lat: nearest.latlng.lat,   // ✅ add this
+      lng: nearest.latlng.lng    // ✅ add this
     });
   });
 
@@ -1256,7 +1296,58 @@ function analyzePopulation(latlng) {
     level
   };
 }
+//////////////////////////////////////////////////////////////
+//////////////////////////////// routing leaflet ////////////////////
+/////////////////////////////////////////////////////////////////////
 
+
+let routingControl = null;
+let lastClickLatLng = null;
+
+function routeToPOI(targetLatLng) {
+  if (!lastClickLatLng) return;
+  if (!L.Routing) {
+    showToast("⚠️ Routing service not available");
+    return;
+  }
+
+  try{
+  // remove existing route
+  if (routingControl) {
+    map.removeControl(routingControl);
+    routingControl = null;
+  }
+
+  routingControl = L.Routing.control({
+    waypoints: [
+      lastClickLatLng,
+      targetLatLng
+    ],
+    addWaypoints: false,
+    draggableWaypoints: false,
+    fitSelectedRoutes: true,
+    show: false,                // 🚫 no itinerary panel
+    routeWhileDragging: false,
+    createMarker: () => null,   // 🚫 no markers
+    lineOptions: {
+      styles: [{
+        color: '#0d6efd',
+        weight: 5,
+        opacity: 0.85
+      }]
+    }
+  }).on('routingerror', function () {
+      showToast("❌ Route not available");
+      if (routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+      }
+    }).addTo(map);
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Route not available");
+  }
+}
 
   </script>
 </body>
