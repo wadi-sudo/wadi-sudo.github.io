@@ -114,7 +114,7 @@ rel="stylesheet"
 
   <p>
     Each clicked location is linked to its corresponding
-    <b>governorate</b>, from which an official population value is retrieved.
+    <b>Delegation</b>, from which an official population value is retrieved.
     This value is normalized to produce a <b>Population Pressure Score</b>
     between <b>0</b> (low pressure) and <b>1</b> (high pressure).
   </p>
@@ -860,7 +860,7 @@ if (population) {
       </summary>
 
       <ul style="padding-left:18px; margin:6px 0;">
-        <li><b>Governorate:</b> ${population.governorate}</li>
+        <li><b>Delegation:</b> ${population.governorate}</li>
         <li><b>Population:</b> ${population.population.toLocaleString()}</li>
         <li><b>Pressure level:</b> ${population.level}</li>
       </ul>
@@ -1339,7 +1339,7 @@ let govFeatures = [];
 let popMin = Infinity;
 let popMax = -Infinity;
 
-fetch('urban/data/gov.geojson')
+fetch('urban/data/deleg.geojson')
   .then(res => res.json())
   .then(data => {
 
@@ -1555,4 +1555,3 @@ ${JSON.stringify(areaData, null, 2)}
   </script>
 </body>
 </html>
-
