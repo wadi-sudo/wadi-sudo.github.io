@@ -224,8 +224,11 @@ function showNotification(message, duration = 3000) {
   function clearViewSheds() {
     viewSheds.forEach(vs => vs.destroy());
     viewSheds = [];
+        arrViewField.forEach(vs => vs.destroy());
+    arrViewField=[]
   }
 </script>
 
 </body>
 </html>
+
