@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>3D GIS</title>
+  <link rel="icon" href="logo2.png" type="image/png">
+
+  <!-- Cesium -->
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Cesium.js"></script>
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.97/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
+
+  <!-- Bootstrap (CSS only) -->
+  <link href="libs/bootstrap.min.css" rel="stylesheet">
+
+  <!-- ViewShed -->
+  <script src="turf/cesium-shed.js"></script>
+
+  <style>
+    html, body, #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    #myButton {
+      position: fixed;
+      top: 7px;
+      left: 150px;
+      z-index: 2;
+    }
+
+    .sidebar {
+      height: 100%;
+      width: 0;
+      position: fixed;
+      z-index: 3;
+      top: 0;
+      left: 0;
+      background-color: #111;
+      overflow-x: hidden;
+      transition: 0.4s;
+      padding-top: 60px;
+      color: white;
+    }
+
+    .sidebar .closebtn {
+      position: absolute;
+      top: 0;
+      right: 20px;
+      font-size: 36px;
+    }
+    .cesium-button i {
+  font-size: 14px;
+  color: #edffff;
+}
+
+  </style>
+</head>
+
+<body>
+
+<div id="cesiumContainer"></div>
+
+
+       <div class="cesium-toolbar"
+       style="position:absolute; top:5px; right:80px; z-index:2;">
+  
+    <!-- ViewShed / Analysis -->
+    <button class="cesium-button"
+            title="ViewShed Analysis"
+            onclick="openNav()">
+      <i class="fa-solid fa-eye"></i>
+    </button>
+  
+    <!-- Leaflet -->
+    <button class="cesium-button"
+            title="Open Leaflet Map"
+            onclick="goToLeaflet()">
+      <i class="fa-regular fa-map"></i>
+    </button>
+  
+  </div>
+  
+  
+
+
+<div id="mySidebar" class="sidebar">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+
+  <h5 class="px-3">ViewShed Analysis</h5>
+
+  <div class="px-3">
+    <label>Vertical Angle</label>
+    <input id="value1" class="form-control form-control-sm" type="number">
+
+    <label class="mt-2">Horizontal Angle</label>
+    <input id="value2" class="form-control form-control-sm" type="number">
+
+    <div class="mt-3">
+      <button class="btn btn-secondary btn-sm" onclick="setvisible('add')">
+        Draw on map
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="setvisible('remove')">
+        Remove
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div id="notification" style="
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+"></div>
+
+<script>
+function showNotification(message, duration = 3000) {
+    const notif = document.getElementById("notification");
+    notif.innerText = message;
+    notif.style.display = "block";
+    notif.style.opacity = 1;
+
+    // fade out after duration
+    setTimeout(() => {
+        let opacity = 1;
+        const fadeInterval = setInterval(() => {
+            opacity -= 0.05;
+            if(opacity <= 0){
+                notif.style.display = "none";
+                clearInterval(fadeInterval);
+            } else {
+                notif.style.opacity = opacity;
+            }
+        }, 30);
+    }, duration);
+}
+
+
+  function openNav() {
+    document.getElementById("mySidebar").style.width = "300px";
+  }
+
+  function closeNav() {
+    document.getElementById("mySidebar").style.width = "0";
+  }
+  function goToLeaflet() {
+    window.location.href = "urban.html";
+  }
+
+  Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4Mzk1ZDk1Yy0yZGMxLTQ2MmMtYmI3NS1iMTU3ZGEzZjhjYTciLCJpZCI6ODQxOTksImlhdCI6MTY0NjE1Mjg2N30.zVQGaIvKxva8XuJVAkfH-XHe9hsV5z6UW-zWD-1pt8k';
+
+  const viewer = new Cesium.Viewer("cesiumContainer", {
+    geocoder: false,
+    animation: false,
+    timeline: false,
+    fullscreenButton: false,
+    sceneModePicker: false,
+    baseLayerPicker: false,
+    navigationHelpButton: true,
+    terrainProvider: Cesium.createWorldTerrain()
+  });
+
+  viewer.scene.primitives.add(Cesium.createOsmBuildings());
+
+  viewer.camera.flyTo({
+    destination: Cesium.Cartesian3.fromDegrees(10.23, 36.82, 390),
+    orientation: {
+      heading: Cesium.Math.toRadians(15),
+      pitch: Cesium.Math.toRadians(-15)
+    },
+    duration: 5
+  });
+
+  viewer.scene.globe.enableLighting = true;
+  viewer.scene.globe.depthTestAgainstTerrain = true;
+
+  let viewSheds = [];
+  var arrViewField = [];
+  function setvisible(action) {
+    if (action === "add") addViewShed();
+    if (action === "remove") clearViewSheds();
+  }
+
+  function addViewShed() {
+  const vAngle = Number(document.getElementById("value1").value);
+  const hAngle = Number(document.getElementById("value2").value);
+
+  if (!vAngle || !hAngle) {
+    alert("Please enter vertical and horizontal angles");
+    return;
+  }
+
+  const viewShed = new Cesium.ViewShed3D(viewer, {
+    verticalAngle: vAngle,
+    horizontalAngle: hAngle,
+
+    calback: function () {
+      console.log("Computed distance (m):", viewShed.distance);
+      showNotification("Distance: " + viewShed.distance.toFixed(2) + " meters");
+
+    }
+  });
+
+  arrViewField.push(viewShed);
+}
+
+  function clearViewSheds() {
+    viewSheds.forEach(vs => vs.destroy());
+    viewSheds = [];
+  }
+</script>
+
+</body>
+</html>
