@@ -1702,7 +1702,7 @@ map.setView(latlng, map.getZoom());
   const point = map.latLngToContainerPoint(latlng);
   container.style.left = point.x + "px";
   container.style.top = point.y + "px";
-
+positionContainer(container, point);
   simulationSelector = container;
   L.DomEvent.disableClickPropagation(simulationSelector);
 
@@ -1740,9 +1740,31 @@ function addSimulatedPOI(latlng, poiDef) {
   showToast("POI simulé ajouté");
 }
 
+function positionContainer(container, clickPoint) {
+  const mapSize = map.getSize(); // largeur/hauteur du viewport
+  const containerWidth = container.offsetWidth;
+  const containerHeight = container.offsetHeight;
 
+  let x = clickPoint.x;
+  let y = clickPoint.y;
+
+  // empêcher container de dépasser à droite
+  if (x + containerWidth > mapSize.x) {
+    x = mapSize.x - containerWidth - 10; // 10px marge
+  }
+
+  // empêcher container de dépasser en bas
+  if (y + containerHeight > mapSize.y) {
+    y = mapSize.y - containerHeight - 10;
+  }
+
+  // appliquer la position
+  container.style.left = x + 'px';
+  container.style.top = y + 'px';
+}
   </script>
 </body>
 </html>
+
 
 
