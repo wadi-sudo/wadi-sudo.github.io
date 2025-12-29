@@ -1661,7 +1661,7 @@ let simulationSelector = null;
 
 function showSimulationSelector(latlng) {
   removeSimulationSelector();
-
+map.setView(latlng, map.getZoom());
   const container = L.DomUtil.create("div", "simulation-selector");
   container.style.position = "absolute";
   container.style.background = "#fff";
@@ -1744,4 +1744,5 @@ function addSimulatedPOI(latlng, poiDef) {
   </script>
 </body>
 </html>
+
 
