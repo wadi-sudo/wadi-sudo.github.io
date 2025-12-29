@@ -1032,6 +1032,11 @@ const areaData = {
     .setContent(buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated))
     .openOn(map);
 //  e.latlng.lat, e.latlng.lng
+	const wrapper = popup.getElement().querySelector('.leaflet-popup-content-wrapper');
+if (wrapper) {
+  wrapper.style.maxHeight = '600px'; // hauteur max
+  wrapper.style.overflowY = 'auto';   // scroll vertical si dépasse
+}
   // Attach click listener for AI button after popup is opened
   setTimeout(() => {
     const btn = popup.getElement().querySelector(".ai-trigger-btn");
@@ -1768,6 +1773,7 @@ function positionContainer(container, clickPoint) {
   </script>
 </body>
 </html>
+
 
 
 
