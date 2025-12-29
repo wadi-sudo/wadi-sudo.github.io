@@ -414,7 +414,28 @@ map.on('locationerror', function(e) {
 });
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// Logic////////////////////////////
+function runFullAnalysis(latlng, includeSimulation = false) {
+  const poiSource = includeSimulation
+    ? [...allPOIs, ...simulatedPOIs]
+    : allPOIs;
 
+  const health = analyzeHealth(latlng, poiSource);
+  const security = analyzeSecurity(latlng, poiSource);
+  const transport = analyzeTransport(latlng, poiSource);
+  const population = analyzePopulation(latlng);
+
+  let total =
+    health.totalScore +
+    security.totalScore +
+    transport.totalScore;
+
+  if (population) {
+    total = Math.round(total * (0.7 + 0.3 * population.pressureScore));
+  }
+
+  return { health, security, transport, population, total };
+}
+////
 function distanceMeters(a, b) {
   return map.distance(a, b);
 }
@@ -543,7 +564,7 @@ const serviceDescriptions = {
 };
 let usedPOIs = [];
 
-function analyzeHealth(latlng) {
+function analyzeHealth(latlng,poiSource) {
   let totalScore = 0;
   let breakdown = [];
   let servicesFound = 0;
@@ -551,8 +572,9 @@ function analyzeHealth(latlng) {
 
   for (const key in healthConfig) {
     const cfg = healthConfig[key];
+    // [...allPOIs, ...simulatedPOIs].filter(...)
 
-    const found = allPOIs.filter(poi => {
+    const found = poiSource.filter(poi => {
       if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
       return map.distance(latlng, poi.latlng) <= cfg.radius;
     });
@@ -584,7 +606,7 @@ function analyzeHealth(latlng) {
   };
 }
 
-function analyzeSecurity(latlng) {
+function analyzeSecurity(latlng,poiSource) {
   let totalScore = 0;
   let breakdown = [];
   let servicesFound = 0;
@@ -593,7 +615,7 @@ function analyzeSecurity(latlng) {
   for (const key in securityConfig) {
     const cfg = securityConfig[key];
 
-    const found = allPOIs.filter(poi => {
+    const found = poiSource.filter(poi => {
       if (poi.category !== 'security') return false;
       if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
       return map.distance(latlng, poi.latlng) <= cfg.radius;
@@ -620,7 +642,7 @@ function analyzeSecurity(latlng) {
 
   return { totalScore, breakdown, usedPOIs };
 }
-function analyzeTransport(latlng) {
+function analyzeTransport(latlng,poiSource) {
   let totalScore = 0;
   let breakdown = [];
   let servicesFound = 0;
@@ -629,7 +651,7 @@ function analyzeTransport(latlng) {
   for (const key in transportConfig) {
     const cfg = transportConfig[key];
 
-    const found = allPOIs.filter(poi => {
+    const found = poiSource.filter(poi => {
       if (poi.category !== 'transport') return false;
       if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
       return map.distance(latlng, poi.latlng) <= cfg.radius;
@@ -760,7 +782,7 @@ return html;
 }
 
 
-function buildPopup(health, security, transport,nearestDistances,population) {
+function buildPopup(health, security, transport,nearestDistances,population,base,simulated) {
 
 let totalScore =
   health.totalScore +
@@ -772,10 +794,28 @@ if (population) {
 }
   updateGlobalBadge(totalScore);
 
+  let simulationHTML = "";
+
+const diff = simulated.total - base.total;
+if (diff!==0){
+  simulationHTML = `
+<hr>
+<b>🧪 Simulation Impact</b><br>
+Real Score : <b>${base.total}</b><br>
+Simulated Score : <b>${simulated.total}</b><br>
+Impact :
+<b style="color:${diff >= 0 ? 'green' : 'red'}">
+${diff >= 0 ? '+' : ''}${diff}
+</b>
+`;
+}
+
+
 let html = `
   <div style="font-family:Inter,sans-serif; font-size:14px; line-height:1.4">
     <b>📍 Area Overview</b><br>
 `;
+html += simulationHTML;
 
 html += renderDomainSection("Health", "🩺", health); // open by default
 html += renderDomainSection("Security", "🚓", security);
@@ -923,6 +963,16 @@ let highlightLayer = L.layerGroup().addTo(map);
 map.on("click", function(e) {
   lastClickLatLng = e.latlng;
 
+
+// ================== SIMULATION CLICK ==================
+if (analysisMode === "simulation") {
+    showSimulationSelector(e.latlng);
+    return;
+}
+////////////////////////////////////////////////////////////////////////
+const base = runFullAnalysis(e.latlng, false);
+const simulated = runFullAnalysis(e.latlng, true);
+
   if (routingControl) {
     map.removeControl(routingControl);
     routingControl = null;
@@ -936,20 +986,28 @@ map.on("click", function(e) {
     fillOpacity: 1
   }).addTo(map);
 
-  const health = analyzeHealth(e.latlng);
-  const security = analyzeSecurity(e.latlng);
-  const transport = analyzeTransport(e.latlng);
+  // const health = analyzeHealth(e.latlng);
+  // const security = analyzeSecurity(e.latlng);
+  // const transport = analyzeTransport(e.latlng);
+  const health = simulated.health;
+  const security = simulated.security;
+  const transport = simulated.transport;
   const nearestDistances = runNearestAnalysis(e.latlng);
   const population = analyzePopulation(e.latlng);
 
-  let totalScore =
-  health.totalScore +
-  security.totalScore +
-  transport.totalScore;
-if (population) {
-  const factor = 0.7 + 0.3 * population.pressureScore;
-  totalScore = Math.round(totalScore * factor);
-}
+//   let totalScore =
+//   health.totalScore +
+//   security.totalScore +
+//   transport.totalScore;
+// if (population) {
+//   const factor = 0.7 + 0.3 * population.pressureScore;
+//   totalScore = Math.round(totalScore * factor);
+// }
+let totalScore=simulated.total
+// if (baselineTotalScore === null) {
+//   baselineTotalScore = totalScore;
+// }
+
 
 const areaData = {
   health: {
@@ -971,7 +1029,7 @@ const areaData = {
 // console.log(areaData)
   const popup = L.popup({ maxWidth: 400 })
     .setLatLng(e.latlng)
-    .setContent(buildPopupWithAIButton(health, security, transport, nearestDistances, population))
+    .setContent(buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated))
     .openOn(map);
 //  e.latlng.lat, e.latlng.lng
   // Attach click listener for AI button after popup is opened
@@ -995,8 +1053,8 @@ const areaData = {
   }, 50); // slight delay to ensure DOM exists
 });
 
-function buildPopupWithAIButton(health, security, transport, nearestDistances, population) {
-  let html = buildPopup(health, security, transport, nearestDistances, population);
+function buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated) {
+  let html = buildPopup(health, security, transport, nearestDistances, population,base,simulated);
 
   // Add AI button with a container for result
   html += `
@@ -1266,7 +1324,7 @@ function runNearestAnalysis(clickLatLng) {
     let nearest = null;
     let minDistance = Infinity;
 
-    allPOIs.forEach(poi => {
+    [...allPOIs, ...simulatedPOIs].forEach(poi => {
       if (poi.category !== service.category) return;
       if (poi.properties.Valeur_POI !== service.value) return;
 
@@ -1551,9 +1609,139 @@ ${JSON.stringify(areaData, null, 2)}
   showToast("AI insight temporarily unavailable");
   return "AI insight temporarily unavailable";
 }
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////Simulation///////////////////////
+
+// ================== SIMULATION MODE ==================
+let analysisMode = "analysis"; // analysis | simulation
+let simulatedPOIs = [];
+let baselineTotalScore = null;
+L.easyButton({
+  position: 'topright',
+  states: [{
+    stateName: 'simulation',
+    icon: 'fa-flask',
+    title: 'Toggle Simulation Mode',
+    onClick: function(btn, map) {
+      analysisMode = analysisMode === 'analysis' ? 'simulation' : 'analysis';
+      showToast(
+        analysisMode === 'simulation'
+          ? "🧪 Simulation mode ON: click map to add POIs"
+          : "📊 Analysis mode ON"
+      );
+      map.getContainer().style.cursor =
+        analysisMode === 'simulation' ? 'crosshair' : '';
+    }
+  }]
+}).addTo(map);
+
+// ================== SIMULATION POI CONFIG ==================
+const SIM_POI_OPTIONS = [
+  { label: "Hôpital", category: "health" },
+  { label: "Clinique", category: "health" },
+  { label: "Pharmacie", category: "health" },
+  { label: "Cabinet médical", category: "health" },
+  { label: "Centre médical", category: "health" },
+  { label: "Dispensaire", category: "health" },
+  { label: "Laboratoire d’analyses", category: "health" },
+  { label: "Imagerie médicale", category: "health" },
+  { label: "Police", category: "security" },
+  { label: "Douane", category: "security" },
+  { label: "Protection civile", category: "security" },
+  { label: "Garde nationale", category: "security" },
+  { label: "Gare", category: "transport" },
+  { label: "Station metro", category: "transport" },
+  { label: "Station taxi", category: "transport" },
+  { label: "Station bus", category: "transport" },
+  { label: "Station louage", category: "transport" }
+];
+
+
+let simulationSelector = null;
+
+function showSimulationSelector(latlng) {
+  removeSimulationSelector();
+
+  const container = L.DomUtil.create("div", "simulation-selector");
+  container.style.position = "absolute";
+  container.style.background = "#fff";
+  container.style.padding = "8px";
+  container.style.borderRadius = "6px";
+  container.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+  container.style.zIndex = 1000;
+
+  const select = document.createElement("select");
+  select.style.width = "100%";
+  select.className = "form-select form-select-sm w-100 mt-2"; // classes Bootstrap
+
+  SIM_POI_OPTIONS.forEach((p, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = p.label;
+    select.appendChild(opt);
+  });
+
+  const btn = document.createElement("button");
+  btn.textContent = "Ajouter";
+  btn.style.marginTop = "6px";
+  btn.style.width = "100%";
+  btn.className = "btn btn-sm btn-primary w-100 mt-2";
+
+
+  btn.onclick = () => {
+    const selected = SIM_POI_OPTIONS[select.value];
+    addSimulatedPOI(latlng, selected);
+    removeSimulationSelector();
+  };
+
+  container.appendChild(select);
+  container.appendChild(btn);
+
+  document.body.appendChild(container);
+
+  const point = map.latLngToContainerPoint(latlng);
+  container.style.left = point.x + "px";
+  container.style.top = point.y + "px";
+
+  simulationSelector = container;
+  L.DomEvent.disableClickPropagation(simulationSelector);
+
+}
+
+
+function removeSimulationSelector() {
+  if (simulationSelector) {
+    simulationSelector.remove();
+    simulationSelector = null;
+  }
+}
+
+function addSimulatedPOI(latlng, poiDef) {
+  const simPOI = {
+    latlng: latlng,
+    category: poiDef.category,
+    properties: {
+      Valeur_POI: poiDef.label
+    },
+    simulated: true
+  };
+
+  simulatedPOIs.push(simPOI);
+
+  L.circleMarker(latlng, {
+    radius: 7,
+    color: "#ff9800",
+    fillColor: "#ff9800",
+    fillOpacity: 0.9
+  })
+  .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
+  .addTo(map);
+
+  showToast("POI simulé ajouté");
+}
+
 
   </script>
 </body>
 </html>
-
 
