@@ -1728,12 +1728,15 @@ function addSimulatedPOI(latlng, poiDef) {
 
   simulatedPOIs.push(simPOI);
 
-  L.circleMarker(latlng, {
-    radius: 7,
-    color: "#ff9800",
-    fillColor: "#ff9800",
-    fillOpacity: 0.9
-  })
+//  L.circleMarker(latlng, {
+//    radius: 7,
+//    color: "#ff9800",
+//    fillColor: "#ff9800",
+ //   fillOpacity: 0.9
+//  })
+//  .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
+//  .addTo(map);
+L.marker(latlng)
   .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
   .addTo(map);
 
@@ -1765,6 +1768,7 @@ function positionContainer(container, clickPoint) {
   </script>
 </body>
 </html>
+
 
 
 
