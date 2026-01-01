@@ -35,6 +35,7 @@ rel="stylesheet"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 
 <!-- Leaflet Routing Machine -->
@@ -180,41 +181,88 @@ const clusterGrouphealth = L.markerClusterGroup({
   maxClusterRadius: 50
 });
 ///
+const healthLayers = {
+  'Hôpital': L.markerClusterGroup(),
+  'Clinique': L.markerClusterGroup(),
+  'Dispensaire': L.markerClusterGroup(),
+  'Centre médical': L.markerClusterGroup(),
+  'Cabinet médical': L.markerClusterGroup(),
+  'Pharmacie': L.markerClusterGroup(),
+  'Laboratoire d’analyses': L.markerClusterGroup(),
+  'Imagerie médicale': L.markerClusterGroup(),
+  'Vétérinaire': L.markerClusterGroup()
+};
 
+// fetch('urban/data/health.geojson')
+//   .then(res => res.json())
+//   .then(data => {
 
+//     const poihealth = L.geoJSON(data, {
+//       pointToLayer: function (feature, latlng) {
+//       //   return L.marker(latlng, { icon: healthIcon });
+//       // },
+//       const marker = L.marker(latlng, { icon: healthIcon });
+
+// allPOIs.push({
+//   layer: marker,
+//   latlng: latlng,
+//   category: 'health',
+//   properties: feature.properties
+// });
+
+// return marker;
+// },
+
+//       onEachFeature: function (feature, layer) {
+//         layer.bindPopup(`
+//           <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+//           <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+//         `);
+//       }
+//     });
+
+//     clusterGrouphealth.addLayer(poihealth);
+//     // map.addLayer(clusterGrouphealth);
+//   });
+/////
 fetch('urban/data/health.geojson')
   .then(res => res.json())
   .then(data => {
 
-    const poihealth = L.geoJSON(data, {
+    L.geoJSON(data, {
       pointToLayer: function (feature, latlng) {
-      //   return L.marker(latlng, { icon: healthIcon });
-      // },
-      const marker = L.marker(latlng, { icon: healthIcon });
 
-allPOIs.push({
-  layer: marker,
-  latlng: latlng,
-  category: 'health',
-  properties: feature.properties
-});
+        const type = feature.properties.Valeur_POI;
+        if (!healthLayers[type]) return null; // safety
 
-return marker;
-},
+        const marker = L.marker(latlng, { icon: healthIcon });
+
+        // 🔹 store for analysis (independent from visibility)
+        allPOIs.push({
+          layer: marker,
+          latlng: latlng,
+          category: 'health',
+          properties: feature.properties
+        });
+
+        return marker;
+      },
 
       onEachFeature: function (feature, layer) {
+        const type = feature.properties.Valeur_POI;
+        if (!healthLayers[type]) return;
+
         layer.bindPopup(`
           <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
-          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+          <b>Type :</b> ${type}
         `);
+
+        // 🔹 add to its category cluster
+        healthLayers[type].addLayer(layer);
       }
     });
 
-    clusterGrouphealth.addLayer(poihealth);
-    // map.addLayer(clusterGrouphealth);
   });
-/////
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////// BASE MAPS/////////////////////////////////////////////////////////
@@ -228,11 +276,22 @@ const baseMaps = {
 
 
 
+// const overlayMaps = {
+//   "Health": clusterGrouphealth,
+
+// };
+
 const overlayMaps = {
-  "Health": clusterGrouphealth,
-
+  "Hospitals": healthLayers['Hôpital'],
+  "Clinics": healthLayers['Clinique'],
+  "Dispensaries": healthLayers['Dispensaire'],
+  "Medical Centers": healthLayers['Centre médical'],
+  "Medical Offices": healthLayers['Cabinet médical'],
+  "Pharmacies": healthLayers['Pharmacie'],
+  "Laboratories": healthLayers['Laboratoire d’analyses'],
+  "Imaging Centers": healthLayers['Imagerie médicale'],
+  // "Veterinary": healthLayers['Vétérinaire']
 };
-
 
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,17 +311,17 @@ function sidebarreturn() {
 				.setPosition("topleft")
 				.addTo(map);
 
-L.easyButton({
-    position: 'topleft',       // top right corner
-    states: [{
-        stateName: 'go-to-page',
-        icon: 'fa-refresh',  // font awesome icon
-        title: 'Return to previous page',
-        onClick: function(btn, map){
-            window.location.href = './cesium.html'; // redirect
-        }
-    }]
-}).addTo(map);
+// L.easyButton({
+//     position: 'topleft',       // top right corner
+//     states: [{
+//         stateName: 'go-to-page',
+//         icon: 'fa-refresh',  // font awesome icon
+//         title: 'Return to previous page',
+//         onClick: function(btn, map){
+//             window.location.href = './cesium.html'; // redirect
+//         }
+//     }]
+// }).addTo(map);
 
 L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
 
@@ -412,9 +471,9 @@ function analyzeHealth(latlng,poiSource) {
   }
 
   // diversity bonus
-  if (servicesFound >= 4) {
-    totalScore += 10;
-  }
+  // if (servicesFound >= 4) {
+  //   totalScore += 10;
+  // }
 
   return {
     totalScore,
@@ -456,7 +515,7 @@ scoreBadge.onAdd = function () {
     font-weight: 600;
     text-align: center;
   `;
-  div.innerHTML = 'Area Score: –';
+  div.innerHTML = 'Health Score: –';
   return div;
 };
 scoreBadge.addTo(map);
@@ -466,7 +525,7 @@ function updateGlobalBadge(score) {
   const status = interpretScore(score);
   const div = document.querySelector('.score-badge');
   div.innerHTML = `
-    Total Score: ${score}<br>
+    Health-population Score: ${score}/100<br>
     ${status.icon} ${status.label}
   `;
 }
@@ -485,10 +544,10 @@ let html = `
       outline:none;
     ">
       ${icon} ${title}
-      <span style="color:${status.color}; margin-left:6px">
+      <!--<span style="color:${status.color}; margin-left:6px">
         ${status.icon} ${status.label}
-      </span>
-      <!--<small>(${result.totalScore})</small>-->
+      </span>-->
+      <small>(${result.totalScore}/100)</small>
     </summary>
 
     <ul style="padding-left:18px; margin:6px 0;">
@@ -513,9 +572,9 @@ result.breakdown.forEach(item => {
   }
 });
 
-if (result.breakdown.filter(b => b.count > 0).length >= 4) {
-  html += `<li>🎁 Diversity bonus: +10</li>`;
-}
+// if (result.breakdown.filter(b => b.count > 0).length >= 4) {
+//   html += `<li>🎁 Diversity bonus: +10</li>`;
+// }
 
 html += `
     </ul>
@@ -854,7 +913,7 @@ osmSearchContainer.innerHTML = `
   </div>
 `;
 
-const osmSearchControl = L.control({ position: 'topright' });
+const osmSearchControl = L.control({ position: 'topleft' });
 osmSearchControl.onAdd = function () {
   // Prevent clicks on search container from propagating to map
   L.DomEvent.disableClickPropagation(osmSearchContainer);
@@ -872,7 +931,7 @@ const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
   btn.button.style.display = 'none'; // hide button
   searchBox.style.display = 'block'; // show search box
   osmInput.focus();
-}, 'Search place').setPosition("topright").addTo(map);
+}, 'Search place').setPosition("topleft").addTo(map);
 
 // Collapse search box and show button
 function collapseSearch() {
@@ -900,7 +959,7 @@ osmInput.addEventListener('input', function () {
   osmSearchTimer = setTimeout(() => {
     const url =
       `https://nominatim.openstreetmap.org/search?` +
-      `format=json&countrycodes=tn&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`;
+      `format=json&countrycodes=tn&addressdetails=1&limit=3&q=${encodeURIComponent(query)}`;
 
     fetch(url, {
       headers: { 'Accept': 'application/json', 'User-Agent': 'UrbanAnalysisGIS/1.0' }
@@ -944,8 +1003,103 @@ function zoomToOSMPlace(place) {
 
   collapseSearch();
 }
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////// poi search /////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+const searchControl = L.control({ position: 'topright' });
+
+searchControl.onAdd = function () {
+  const div = L.DomUtil.create('div', 'search-control');
+  div.innerHTML = `
+    <input 
+      type="text" 
+      id="searchInput" 
+      class="form-control form-control-sm"
+      placeholder="Search POIs..."
+    />
+    <div id="searchResults"></div>
+  `;
+
+  L.DomEvent.disableClickPropagation(div);
+
+  return div;
+};
+
+searchControl.addTo(map);
 
 
+/////////////////////////////
+const categoryStyles = {
+  Hôpital:   { color: '#e63946' },
+  Clinique:{ color: '#457b9d' },
+  Dispensaire:  { color: '#f4a261' },
+  Pharmacie:{ color: '#2a9d8f' },
+  // admin:   { color: '#6a4c93' }
+};
+
+const categoryLabels = {
+  Hôpital: 'Hospital',
+  Clinique: 'Clinic',
+  Dispensaire: 'Dispensaries',
+  Pharmacie: 'Pharmacies',
+  // admin: 'Administration'
+};
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', function () {
+  const query = this.value.toLowerCase();
+  searchResults.innerHTML = '';
+
+  if (query.length < 2) return;
+
+  const matches = allPOIs.filter(poi => {
+    const name = poi.properties.Name_POI_F || '';
+    return name.toLowerCase().includes(query);
+  });
+
+  matches.slice(0, 20).forEach(poi => {
+    const div = document.createElement('div');
+    div.className = 'search-item';
+    div.innerHTML = `
+      <span style="color:${categoryStyles[poi.properties.Valeur_POI]?.color}">
+        ● ${poi.properties.Valeur_POI}
+      </span><br>
+      <small>${poi.properties.Name_POI_F}</small>
+    `;
+// ${categoryLabels[poi.properties.Valeur_POI]}
+    div.onclick = function () {
+      L.DomEvent.disableClickPropagation(div);
+      zoomToPOI(poi);
+    };
+
+    searchResults.appendChild(div);
+  });
+});
+//////////////////////////////
+let analysisLayer = L.layerGroup().addTo(map);
+function zoomToPOI(poi) {
+  //clearAnalysis();
+  searchResults.innerHTML = '';
+  searchInput.value = '';
+
+  map.setView(poi.latlng, 19);
+
+  const highlight = L.circleMarker(poi.latlng, {
+    radius: 10,
+    color: categoryStyles[poi.properties.Valeur_POI]?.color || '#000',
+    fillOpacity: 0.9
+  }).addTo(analysisLayer);
+
+  setTimeout(() => {
+    analysisLayer.removeLayer(highlight);
+  }, 4000);
+
+  poi.layer.openPopup();
+}
+
+///////////////////////////////////////////////////////////////////////////:
 ///////////////////////////////// heat//////////////////////////////////////
 
 let heatmapLayer = null;
@@ -959,7 +1113,8 @@ heatmapControl.onAdd = function () {
     <select id="heatmapSelect" class="form-select form-select-sm">
       <option value="">-- None --</option>
     <option value="Hôpital">🏥 Hospital</option>
-    <option value="Clinique">🏨 Clinic</option>   
+    <option value="Clinique">🏨 Clinic</option>
+    <option value="Dispensaire">🩺 Dispensaries</option>   
     <option value="Pharmacie">💊 Pharmacies </option>
     <option value="Laboratoire d’analyses">🧪 Laboratories </option>
     <option value="Imagerie médicale">🩻 Imaging Centers </option>
@@ -1143,7 +1298,16 @@ fetch('urban/data/deleg.geojson')
         color: '#555',
         weight: 2,
         fillOpacity: 0
-      }
+      },
+      onEachFeature: function(feature, layer) {
+  layer.on('mouseover', function(e) {
+    layer.bindTooltip(feature.properties.NAME_1, {permanent: false, direction: "top"}).openTooltip();
+  });
+  layer.on('mouseout', function(e) {
+    layer.closeTooltip();
+  });
+}
+
     });
 
     govFeatures = data.features;
@@ -1167,12 +1331,18 @@ function analyzePopulation(latlng) {
 
   let foundGov = null;
 
+  // govFeatures.forEach(feature => {
+  //   const layer = L.geoJSON(feature);
+  //   if (layer.getBounds().contains(latlng)) {
+  //     foundGov = feature;
+  //   }
+  // });
+
   govFeatures.forEach(feature => {
-    const layer = L.geoJSON(feature);
-    if (layer.getBounds().contains(latlng)) {
-      foundGov = feature;
+    if (turf.booleanPointInPolygon([latlng.lng, latlng.lat], feature)) {
+        foundGov = feature;
     }
-  });
+});
 
   if (!foundGov) return null;
 
@@ -1496,10 +1666,3 @@ function positionContainer(container, clickPoint) {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
