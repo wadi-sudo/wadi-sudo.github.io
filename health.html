@@ -1667,16 +1667,11 @@ function positionContainer(container, clickPoint) {
 
 
 
-
-
-
-	  /**
+/**
  * HOSPITAL GAP ANALYSIS CONTROL
- * Adds a native Leaflet slider to calculate "Cold Spots" using Turf.js
  */
 const HospitalGapAnalysis = L.Control.extend({
   options: { position: 'topright' },
-
   onAdd: function (map) {
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
     container.style.backgroundColor = 'white';
@@ -1686,7 +1681,6 @@ const HospitalGapAnalysis = L.Control.extend({
     container.style.borderRadius = '5px';
     container.style.fontFamily = 'Inter, sans-serif';
 
-    // Prevent map clicks from dragging/clicking through the control
     L.DomEvent.disableClickPropagation(container);
     L.DomEvent.disableScrollPropagation(container);
 
@@ -1706,25 +1700,18 @@ const HospitalGapAnalysis = L.Control.extend({
       </div>
       <div id="gapStats" style="margin-top: 8px; font-size: 10px; color: #666; line-height: 1.2;"></div>
     `;
-
     return container;
   }
 });
 
-// Initialize the control and add to map
 map.addControl(new HospitalGapAnalysis());
-
-// Global layer to hold the red "Desert" polygons
 let desertLayer = L.layerGroup().addTo(map);
 
-/**
- * CORE LOGIC: SPATIAL DIFFERENCE CALCULATION
- */
 function runGapAnalysis() {
   desertLayer.clearLayers();
   
   const isEnabled = document.getElementById('toggleGap').checked;
-  const radiusKm = document.getElementById('gapRadiusRange').value;
+  const radiusKm = parseInt(document.getElementById('gapRadiusRange').value);
   const statsDiv = document.getElementById('gapStats');
 
   if (!isEnabled) {
@@ -1732,17 +1719,24 @@ function runGapAnalysis() {
     return;
   }
 
-  // 1. Get all hospital locations from your existing allPOIs array
+  // DEBUG CHECK: If these are empty, the fetch hasn't finished
+  if (allPOIs.length === 0 || govFeatures.length === 0) {
+    showToast("⚠️ Data is still loading, please wait...");
+    document.getElementById('toggleGap').checked = false;
+    return;
+  }
+
+  // 1. Filter Hospitals
   const hospitals = allPOIs
     .filter(poi => poi.properties.Valeur_POI === 'Hôpital')
     .map(poi => turf.point([poi.latlng.lng, poi.latlng.lat]));
 
-  if (hospitals.length === 0 || !govFeatures.length) {
-    showToast("No data available for analysis");
+  if (hospitals.length === 0) {
+    showToast("No Hospitals found in data.");
     return;
   }
 
-  // 2. Create the unified "Served Zone" (Buffer + Union)
+  // 2. Build Served Area
   const hospitalCollection = turf.featureCollection(hospitals);
   const buffered = turf.buffer(hospitalCollection, radiusKm, { units: 'kilometers' });
   const servedArea = turf.union(buffered);
@@ -1750,55 +1744,42 @@ function runGapAnalysis() {
   let totalAtRisk = 0;
   let desertCount = 0;
 
-  // 3. Subtract served area from each Delegation (Governorate)
+  // 3. Process Delegations
   govFeatures.forEach(gov => {
     try {
-      // Find area outside hospital reach
-      const diff = turf.difference(gov, servedArea);
-      
-      if (diff && diff.geometry.coordinates.length > 0) {
-        const pop = Number(gov.properties.population) || 0;
-        totalAtRisk += pop;
-        desertCount++;
+        // Turf.difference returns the part of 'gov' that does NOT intersect 'servedArea'
+        const diff = turf.difference(gov, servedArea);
+        
+        if (diff && diff.geometry && diff.geometry.coordinates.length > 0) {
+            const pop = Number(gov.properties.population) || 0;
+            totalAtRisk += pop;
+            desertCount++;
 
-        L.geoJSON(diff, {
-          style: {
-            color: '#d62828',
-            fillColor: '#e63946',
-            weight: 1.5,
-            fillOpacity: 0.45,
-            dashArray: '4, 4'
-          }
-        })
-        .bindPopup(`
-          <div style="font-family:Inter, sans-serif;">
-            <b style="color:#d62828;">🚨 Hospital Desert</b><br>
-            <b>Delegation:</b> ${gov.properties.NAME_1}<br>
-            <b>Local Pop:</b> ${pop.toLocaleString()}<br>
-            <small>Area outside ${radiusKm}km reach</small>
-          </div>
-        `)
-        .addTo(desertLayer);
-      }
+            L.geoJSON(diff, {
+                style: {
+                    color: '#d62828',
+                    fillColor: '#e63946',
+                    weight: 1.5,
+                    fillOpacity: 0.4,
+                    dashArray: '4, 4'
+                }
+            })
+            .bindPopup(`<b>🚨 Hospital Desert</b><br>Pop: ${pop.toLocaleString()}`)
+            .addTo(desertLayer);
+        }
     } catch (err) {
-      console.warn("Spatial calculation error:", err);
+        console.error("Spatial error:", err);
     }
   });
 
-  // 4. Update stats in the control
-  statsDiv.innerHTML = `
-    <b>Result:</b> Found ${desertCount} zones.<br>
-    <b>Impact:</b> ~${totalAtRisk.toLocaleString()} people live beyond the ${radiusKm}km limit.
-  `;
+  statsDiv.innerHTML = `<b>Impact:</b> ~${totalAtRisk.toLocaleString()} people at risk.`;
 }
 
-/**
- * EVENT LISTENERS
- */
+// Global delegated listeners to ensure they catch elements even if re-rendered
 document.addEventListener('input', function (e) {
   if (e.target && e.target.id === 'gapRadiusRange') {
     document.getElementById('radiusVal').innerText = e.target.value;
-    runGapAnalysis();
+    if(document.getElementById('toggleGap').checked) runGapAnalysis();
   }
 });
 
@@ -1810,9 +1791,10 @@ document.addEventListener('change', function (e) {
 
 
 
-	  
-  </script>
+
+    </script>
 </body>
 </html>
+
 
 
