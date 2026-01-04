@@ -927,11 +927,11 @@ const osmInput = document.getElementById('osm-search-input');
 const osmResults = document.getElementById('osm-results');
 
 // EasyButton for search
-const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
-  btn.button.style.display = 'none'; // hide button
-  searchBox.style.display = 'block'; // show search box
-  osmInput.focus();
-}, 'Search place').setPosition("topleft").addTo(map);
+// const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
+//   btn.button.style.display = 'none'; // hide button
+//   searchBox.style.display = 'block'; // show search box
+//   osmInput.focus();
+// }, 'Search place').setPosition("topleft").addTo(map);
 
 // Collapse search box and show button
 function collapseSearch() {
@@ -1524,7 +1524,7 @@ let analysisMode = "analysis"; // analysis | simulation
 let simulatedPOIs = [];
 let baselineTotalScore = null;
 L.easyButton({
-  position: 'topright',
+  position: 'topleft',
   states: [{
     stateName: 'simulation',
     icon: 'fa-wand-magic-sparkles',
@@ -1670,13 +1670,39 @@ function positionContainer(container, clickPoint) {
 /**
  * HOSPITAL GAP ANALYSIS CONTROL
  */
+const gapToggleBtn = L.easyButton(
+  'fa-hospital',
+  function () {
+    const ctrl = document.getElementById('hospitalGapControl');
+    const isVisible = ctrl.style.display !== 'none';
+
+    ctrl.style.display = isVisible ? 'none' : 'block';
+
+    // Optional: reset analysis when hiding
+    if (isVisible) {
+      document.getElementById('toggleGap').checked = false;
+      desertLayer.clearLayers();
+      document.getElementById('gapStats').innerHTML = '';
+    }
+  },
+  'Hospital Gap Analysis'
+);
+
+gapToggleBtn.addTo(map);
+map.on('click', () => {
+  document.getElementById('hospitalGapControl').style.display = 'none';
+});
+
+
 const HospitalGapAnalysis = L.Control.extend({
   options: { position: 'topright' },
   onAdd: function (map) {
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+      container.id = 'hospitalGapControl';
+
     container.style.backgroundColor = 'white';
     container.style.padding = '10px';
-    container.style.width = '220px';
+    container.style.width = '200px';
     container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
     container.style.borderRadius = '5px';
     container.style.fontFamily = 'Inter, sans-serif';
@@ -1699,15 +1725,34 @@ const HospitalGapAnalysis = L.Control.extend({
         <label for="toggleGap" style="cursor:pointer; margin:0;">Show High-Risk Zones</label>
       </div>
       <div id="gapStats" style="margin-top: 8px; font-size: 10px; color: #666; line-height: 1.2;"></div>
+
+      <div id="gapLoader" style="
+  display:none;
+  margin-top:8px;
+  font-size:11px;
+  color:#555;
+  text-align:center;
+">
+  <i class="fas fa-spinner fa-spin"></i><br>
+  Analyzing hospital coverage...
+</div>
     `;
     return container;
   }
 });
 
-map.addControl(new HospitalGapAnalysis());
-let desertLayer = L.layerGroup().addTo(map);
+const hospitalGapControl = new HospitalGapAnalysis();
+map.addControl(hospitalGapControl);
+document.getElementById('hospitalGapControl').style.display = 'none';
 
-function runGapAnalysis() {
+let desertLayer = L.layerGroup().addTo(map);
+function showGapLoader(show) {
+  document.getElementById('gapLoader').style.display = show ? 'block' : 'none';
+  document.getElementById('toggleGap').disabled = show;
+  document.getElementById('gapRadiusRange').disabled = show;
+}
+
+async function runGapAnalysis() {
   desertLayer.clearLayers();
   
   const isEnabled = document.getElementById('toggleGap').checked;
@@ -1719,6 +1764,10 @@ function runGapAnalysis() {
     return;
   }
 
+  showGapLoader(true);
+
+  // Allow browser to repaint loader
+  await new Promise(resolve => setTimeout(resolve, 50));
   // DEBUG CHECK: If these are empty, the fetch hasn't finished
   if (allPOIs.length === 0 || govFeatures.length === 0) {
     showToast("⚠️ Data is still loading, please wait...");
@@ -1727,7 +1776,8 @@ function runGapAnalysis() {
   }
 
   // 1. Filter Hospitals
-  const hospitals = allPOIs
+  [...allPOIs, ...simulatedPOIs]
+  const hospitals =  [...allPOIs, ...simulatedPOIs]
     .filter(poi => poi.properties.Valeur_POI === 'Hôpital')
     .map(poi => turf.point([poi.latlng.lng, poi.latlng.lat]));
 
@@ -1739,7 +1789,14 @@ function runGapAnalysis() {
   // 2. Build Served Area
   const hospitalCollection = turf.featureCollection(hospitals);
   const buffered = turf.buffer(hospitalCollection, radiusKm, { units: 'kilometers' });
-  const servedArea = turf.union(buffered);
+  // const servedArea = turf.union(buffered);
+  let servedArea = buffered.features[0];
+
+for (let i = 1; i < buffered.features.length; i++) {
+  servedArea = turf.union(servedArea, buffered.features[i]);
+      statsDiv.innerHTML = `Analyzing ${i + 1} / ${govFeatures.length} zones...`;
+
+}
 
   let totalAtRisk = 0;
   let desertCount = 0;
@@ -1748,8 +1805,11 @@ function runGapAnalysis() {
   govFeatures.forEach(gov => {
     try {
         // Turf.difference returns the part of 'gov' that does NOT intersect 'servedArea'
-        const diff = turf.difference(gov, servedArea);
-        
+        // const diff = turf.difference(gov, servedArea);
+        const diff = turf.difference(
+  turf.cleanCoords(gov),
+  turf.cleanCoords(servedArea)
+);
         if (diff && diff.geometry && diff.geometry.coordinates.length > 0) {
             const pop = Number(gov.properties.population) || 0;
             totalAtRisk += pop;
@@ -1770,9 +1830,12 @@ function runGapAnalysis() {
     } catch (err) {
         console.error("Spatial error:", err);
     }
+
   });
 
   statsDiv.innerHTML = `<b>Impact:</b> ~${totalAtRisk.toLocaleString()} people at risk.`;
+  showGapLoader(false);
+
 }
 
 // Global delegated listeners to ensure they catch elements even if re-rendered
@@ -1795,6 +1858,5 @@ document.addEventListener('change', function (e) {
     </script>
 </body>
 </html>
-
 
 
