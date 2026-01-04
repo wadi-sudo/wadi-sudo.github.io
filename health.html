@@ -193,38 +193,6 @@ const healthLayers = {
   'Vétérinaire': L.markerClusterGroup()
 };
 
-// fetch('urban/data/health.geojson')
-//   .then(res => res.json())
-//   .then(data => {
-
-//     const poihealth = L.geoJSON(data, {
-//       pointToLayer: function (feature, latlng) {
-//       //   return L.marker(latlng, { icon: healthIcon });
-//       // },
-//       const marker = L.marker(latlng, { icon: healthIcon });
-
-// allPOIs.push({
-//   layer: marker,
-//   latlng: latlng,
-//   category: 'health',
-//   properties: feature.properties
-// });
-
-// return marker;
-// },
-
-//       onEachFeature: function (feature, layer) {
-//         layer.bindPopup(`
-//           <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
-//           <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
-//         `);
-//       }
-//     });
-
-//     clusterGrouphealth.addLayer(poihealth);
-//     // map.addLayer(clusterGrouphealth);
-//   });
-/////
 fetch('urban/data/health.geojson')
   .then(res => res.json())
   .then(data => {
@@ -363,6 +331,8 @@ map.on('locationerror', function(e) {
 });
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////// Logic////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+
 function runFullAnalysis(latlng, includeSimulation = false) {
   const poiSource = includeSimulation
     ? [...allPOIs, ...simulatedPOIs]
@@ -716,50 +686,6 @@ let clickMarker = null;
 let highlightLayer = L.layerGroup().addTo(map);
 
 
-// map.on("click", async function(e) {
-//   lastClickLatLng = e.latlng;
-
-//   if (routingControl) {
-//     map.removeControl(routingControl);
-//     routingControl = null;
-//   }
-//   if (clickMarker) map.removeLayer(clickMarker);
-
-//   clickMarker = L.circleMarker(e.latlng, {
-//     radius: 6,
-//     color: "#000",
-//     fillColor: "#fff",
-//     fillOpacity: 1
-//   }).addTo(map);
-
-//   const health = analyzeHealth(e.latlng);
-//   const security = analyzeSecurity(e.latlng);
-//   const transport = analyzeTransport(e.latlng);
-//   const nearestDistances = runNearestAnalysis(e.latlng);
-//   const population = analyzePopulation(e.latlng);
-
-//   // --- OPEN POPUP IMMEDIATELY ---
-//   const popup = L.popup({ maxWidth: 400 })
-//     .setLatLng(e.latlng)
-//     .setContent(buildPopup(health, security, transport, nearestDistances, population) +
-//                 `<hr><b>🧠 AI Area Analysis:</b><br><i>Loading...</i>`)
-//     .openOn(map);
-
-//   // --- FETCH AI RESPONSE ASYNC ---
-//   try {
-//     const aiText = await getAIAreaAnalysis(e.latlng.lat, e.latlng.lng);
-
-//     // Update popup content when AI response arrives
-//     popup.setContent(buildPopup(health, security, transport, nearestDistances, population) +
-//                      `<hr><b>🧠 AI Area Analysis:</b><br>${aiText}`);
-//   } catch (err) {
-//     popup.setContent(buildPopup(health, security, transport, nearestDistances, population) +
-//                      `<hr><b>🧠 AI Area Analysis:</b><br><i>Error loading AI response</i>`);
-//     console.error("AI error:", err);
-//   }
-
-//   // highlightPOIs([...health.usedPOIs, ...security.usedPOIs, ...transport.usedPOIs]);
-// });
 map.on("click", function(e) {
   lastClickLatLng = e.latlng;
 
@@ -893,116 +819,6 @@ function highlightPOIs(pois) {
 }
 
 
-
-
-//////////////////////////////////////////////////////// osm/////////////////////////////
-
-///////////// osmsearch////////
-const osmSearchContainer = L.DomUtil.create('div', 'osm-search-container');
-
-osmSearchContainer.innerHTML = `
-  <div id="osm-search-box" style="display:none; width: 200px;">
-    <input
-      id="osm-search-input"
-      type="text"
-      class="form-control form-control-sm"
-      placeholder="Search place OSM(Tunisia)"
-      autocomplete="off"
-    >
-    <div id="osm-results" class="list-group mt-1"></div>
-  </div>
-`;
-
-const osmSearchControl = L.control({ position: 'topleft' });
-osmSearchControl.onAdd = function () {
-  // Prevent clicks on search container from propagating to map
-  L.DomEvent.disableClickPropagation(osmSearchContainer);
-  L.DomEvent.disableScrollPropagation(osmSearchContainer);
-  return osmSearchContainer;
-};
-osmSearchControl.addTo(map);
-
-const searchBox = document.getElementById('osm-search-box');
-const osmInput = document.getElementById('osm-search-input');
-const osmResults = document.getElementById('osm-results');
-
-// EasyButton for search
-// const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
-//   btn.button.style.display = 'none'; // hide button
-//   searchBox.style.display = 'block'; // show search box
-//   osmInput.focus();
-// }, 'Search place').setPosition("topleft").addTo(map);
-
-// Collapse search box and show button
-function collapseSearch() {
-  searchBox.style.display = 'none';
-  osmResults.innerHTML = '';
-  searchButton.button.style.display = 'block';
-}
-
-// Collapse when clicking on map
-// map.on('click', collapseSearch);
-
-let osmMarker = null;
-let osmMarkerTimeout = null;
-let osmSearchTimer = null;
-
-// Search logic
-osmInput.addEventListener('input', function () {
-  const query = this.value.trim();
-  osmResults.innerHTML = '';
-
-  if (query.length < 3) return;
-
-  clearTimeout(osmSearchTimer);
-
-  osmSearchTimer = setTimeout(() => {
-    const url =
-      `https://nominatim.openstreetmap.org/search?` +
-      `format=json&countrycodes=tn&addressdetails=1&limit=3&q=${encodeURIComponent(query)}`;
-
-    fetch(url, {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'UrbanAnalysisGIS/1.0' }
-    })
-    .then(res => res.json())
-    .then(data => {
-      osmResults.innerHTML = '';
-      if (!data.length) return;
-
-      data.forEach(place => {
-        const item = document.createElement('button');
-        item.className = 'list-group-item list-group-item-action';
-        item.style.fontSize = '12px';
-        item.innerHTML = `<strong>${place.name || place.display_name.split(',')[0]}</strong><br>
-                          <small class="text-muted">${place.display_name}</small>`;
-        item.onclick = () => zoomToOSMPlace(place);
-        osmResults.appendChild(item);
-      });
-    });
-  }, 300);
-});
-
-function zoomToOSMPlace(place) {
-  const lat = parseFloat(place.lat);
-  const lon = parseFloat(place.lon);
-
-  if (osmMarker) map.removeLayer(osmMarker);
-  if (osmMarkerTimeout) clearTimeout(osmMarkerTimeout);
-
-  osmMarker = L.marker([lat, lon])
-    .addTo(map)
-    .bindPopup(`<b>${place.display_name}</b>`)
-    .openPopup();
-
-  map.setView([lat, lon], 15);
-
-  osmMarkerTimeout = setTimeout(() => {
-    if (osmMarker) map.removeLayer(osmMarker);
-    osmMarker = null;
-  }, 5000);
-
-  collapseSearch();
-}
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////// poi search /////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -1011,6 +827,9 @@ const searchControl = L.control({ position: 'topright' });
 
 searchControl.onAdd = function () {
   const div = L.DomUtil.create('div', 'search-control');
+    div.id = 'poi-search-box'; // 👈 IMPORTANT
+
+  div.style.display = 'none'; // 👈 hidden by default
   div.innerHTML = `
     <input 
       type="text" 
@@ -1022,11 +841,40 @@ searchControl.onAdd = function () {
   `;
 
   L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
 
   return div;
 };
 
 searchControl.addTo(map);
+
+const poiSearchBtn = L.easyButton(
+  'fa-magnifying-glass',
+  function (btn, map) {
+    const box = document.getElementById('poi-search-box');
+    const input = document.getElementById('searchInput');
+
+    // Hide button, show search
+    btn.button.style.display = 'none';
+    box.style.display = 'block';
+    input.focus();
+  },
+  'Search POIs'
+).setPosition('topright').addTo(map);
+function collapsePoiSearch() {
+  const box = document.getElementById('poi-search-box');
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+
+  box.style.display = 'none';
+  input.value = '';
+  results.innerHTML = '';
+
+  // Show button again
+  poiSearchBtn.button.style.display = 'block';
+}
+map.on('click', collapsePoiSearch);
+
 
 
 /////////////////////////////
@@ -1100,7 +948,8 @@ function zoomToPOI(poi) {
 }
 
 ///////////////////////////////////////////////////////////////////////////:
-///////////////////////////////// heat//////////////////////////////////////
+///////////////////////////////// Heat Map //////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////
 
 let heatmapLayer = null;
 
@@ -1163,6 +1012,7 @@ document.getElementById('heatmapSelect').addEventListener('change', function () 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// NEAREST /////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
 // Layer for nearest analysis (separate from highlightLayer)
 const nearestLayer = L.layerGroup().addTo(map);
 
@@ -1517,30 +1367,50 @@ ${JSON.stringify(areaData, null, 2)}
   return "AI insight temporarily unavailable";
 }
 /////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////Simulation///////////////////////
+///////////////////////////////////////////// Simulation ///////////////////////
+////////////////////////////////////////////////////////////////////////
 
 // ================== SIMULATION MODE ==================
 let analysisMode = "analysis"; // analysis | simulation
 let simulatedPOIs = [];
 let baselineTotalScore = null;
-L.easyButton({
+
+const simulationBtn = L.easyButton({
   position: 'topleft',
-  states: [{
-    stateName: 'simulation',
-    icon: 'fa-wand-magic-sparkles',
-    title: 'Toggle Simulation Mode',
-    onClick: function(btn, map) {
-      analysisMode = analysisMode === 'analysis' ? 'simulation' : 'analysis';
-      showToast(
-        analysisMode === 'simulation'
-          ? "🧪 Simulation mode ON: click map to add POIs"
-          : "📊 Analysis mode ON"
-      );
-      map.getContainer().style.cursor =
-        analysisMode === 'simulation' ? 'crosshair' : '';
+  states: [
+    {
+      stateName: 'analysis',
+      icon: 'fa-chart-line',
+      title: 'Analysis Mode',
+      onClick: function (btn, map) {
+        analysisMode = 'simulation';
+
+        btn.state('simulation'); // 🔁 switch icon
+
+        showToast("🧪 Simulation mode ON: click map to add POIs");
+        map.getContainer().style.cursor = 'crosshair';
+      }
+    },
+    {
+      stateName: 'simulation',
+      icon: 'fa-wand-magic-sparkles',
+      title: 'Simulation Mode',
+      onClick: function (btn, map) {
+        analysisMode = 'analysis';
+
+        btn.state('analysis'); // 🔁 switch icon
+
+        showToast("📊 Analysis mode ON");
+        map.getContainer().style.cursor = '';
+        // simulatedPOIs = [];
+        // simulatedlayer.clearLayers()
+      }
     }
-  }]
-}).addTo(map);
+  ]
+});
+
+simulationBtn.addTo(map);
+
 
 // ================== SIMULATION POI CONFIG ==================
 const SIM_POI_OPTIONS = [
@@ -1613,7 +1483,7 @@ function removeSimulationSelector() {
     simulationSelector = null;
   }
 }
-
+let simulatedlayer = L.layerGroup().addTo(map)
 function addSimulatedPOI(latlng, poiDef) {
   const simPOI = {
     latlng: latlng,
@@ -1636,7 +1506,7 @@ function addSimulatedPOI(latlng, poiDef) {
 //  .addTo(map);
 L.marker(latlng)
   .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
-  .addTo(map);
+  .addTo(simulatedlayer);
 
   showToast("POI simulé ajouté");
 }
@@ -1665,11 +1535,10 @@ function positionContainer(container, clickPoint) {
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////// HOSPITAL GAP ANALYSIS CONTROL ///////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-/**
- * HOSPITAL GAP ANALYSIS CONTROL
- */
 const gapToggleBtn = L.easyButton(
   'fa-hospital',
   function () {
@@ -1802,7 +1671,7 @@ for (let i = 1; i < buffered.features.length; i++) {
   let desertCount = 0;
 
   // 3. Process Delegations
-  govFeatures.forEach(gov => {
+  await govFeatures.forEach(gov => {
     try {
         // Turf.difference returns the part of 'gov' that does NOT intersect 'servedArea'
         // const diff = turf.difference(gov, servedArea);
@@ -1826,6 +1695,7 @@ for (let i = 1; i < buffered.features.length; i++) {
             })
             .bindPopup(`<b>🚨 Hospital Desert</b><br>Pop: ${pop.toLocaleString()}`)
             .addTo(desertLayer);
+              
         }
     } catch (err) {
         console.error("Spatial error:", err);
@@ -1835,6 +1705,8 @@ for (let i = 1; i < buffered.features.length; i++) {
 
   statsDiv.innerHTML = `<b>Impact:</b> ~${totalAtRisk.toLocaleString()} people at risk.`;
   showGapLoader(false);
+// map.fitBounds(desertLayer)
+map.flyTo([35.04, 9.56],7)
 
 }
 
@@ -1858,6 +1730,5 @@ document.addEventListener('change', function (e) {
     </script>
 </body>
 </html>
-
 
 
