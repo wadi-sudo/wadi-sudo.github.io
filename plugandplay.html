@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spatial Data Analyzer V0</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  body, html { height: 100%; margin: 0; padding: 0; }
+  #map { height: 100%; width: 100%; }
+  /* .leaflet-bottom.leaflet-right { margin-bottom: 60px; } */
+  .map-upload-buttons, .map-tasks { 
+    display: flex; flex-direction: column; gap: 5px; 
+    background: white; padding: 8px; border-radius: 5px; 
+    box-shadow: 0 0 5px rgba(0,0,0,0.4);
+    max-width: 200px;
+  }
+  .file-input { display: none; }
+  .task-btn { font-size: 0.85rem; text-align: left; }
+  @media (max-width: 576px) {
+    .map-upload-buttons, .map-tasks { gap: 3px; padding: 5px; max-width: 150px; }
+    .task-btn { font-size: 0.75rem; }
+  }
+.form-range {
+
+    background-color: #c9d1d9 !important;
+        height: 1rem !important;
+
+}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<!-- Attributes Summary Panel -->
+<div id="attributesPanel" style="
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 200px;
+  max-height: 40vh;
+  z-index: 5000;
+  overflow-y: auto;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  display: none;
+  font-size: 14px;
+">
+  <h5>Layer Summary</h5>
+  <div id="layerSummaryContent"></div>
+</div>
+<!-- Filtering Panel -->
+<div id="filterPanel" style="
+  position: absolute;
+  top: 100px;
+  left: 10px;
+  width: 200px;
+  z-index: 5000;
+  max-height: 40vh;
+  overflow-y: auto;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  display: none;
+  font-size: 14px;
+">
+  <h5>Filters</h5>
+  <div id="filterContent"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+<script src="https://unpkg.com/shpjs@latest/dist/shp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/togeojson/0.16.0/togeojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.11.0/jszip.min.js"></script>
+
+<script>
+const map = L.map('map').setView([34.0, 9.0], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+
+let featureGroup = L.geoJSON().addTo(map);
+let analysisLayer = L.layerGroup().addTo(map);
+// Global layer control
+var layerControl = L.control.layers(null, null, { collapsed: false }).addTo(map);
+
+const taskSuggestions = {
+  "Point": ["Point Concentration Grid", "Coverage (BBox Area)"],
+  "MultiPoint": ["Point Concentration Grid", "Coverage (BBox Area)"],
+  "LineString": ["Length Calculation", "Buffer 0.01°"],
+  "MultiLineString": ["Length Calculation", "Buffer 0.01°"],
+  "Polygon": ["Area Calculation", "Centroid"],
+  "MultiPolygon": ["Area Calculation", "Centroid"]
+};
+
+// ------------- Display Functions ----------------
+function showGeoJSON(geojson) {
+  featureGroup.clearLayers();
+  analysisLayer.clearLayers();
+  layerControl.removeLayer(featureGroup);
+  if (filteredLayer){
+layerControl.removeLayer(filteredLayer);
+map.removeLayer(filteredLayer)
+  }
+  
+  const slider = document.getElementById("gridSliderContainer");
+if (slider) slider.style.display = "none";
+
+  featureGroup.addData(geojson);
+
+  featureGroup.eachLayer(layer => {
+    const props = layer.feature.properties;
+    let popupContent = '<table class="table table-sm">';
+    for (let key in props) {
+      popupContent += `<tr><th>${key}</th><td>${props[key]}</td></tr>`;
+    }
+    popupContent += '</table>';
+    layer.bindPopup(popupContent);
+  });
+
+  map.fitBounds(featureGroup.getBounds());
+  updateSuggestedTasks(geojson);
+  layerControl.addOverlay(featureGroup, "Uploaded Layer");
+
+
+  // SAVE globally if you need for analysis
+window.lastGeoJSON = geojson;
+
+// CALL the attributes analyzer
+analyzeAttributes(geojson);
+generateFilters(geojson);
+
+}
+
+// ------------- Custom Controls ----------------
+const UploadControl = L.Control.extend({
+  onAdd: function(map) {
+    const container = L.DomUtil.create('div', 'map-upload-buttons');
+
+    // GeoJSON
+    const geoBtn = L.DomUtil.create('label', 'btn btn-primary', container);
+    geoBtn.innerText = 'Upload GeoJSON';
+    const geoInput = L.DomUtil.create('input', 'file-input', geoBtn);
+    geoInput.type = 'file'; geoInput.accept = '.geojson,.json';
+    geoInput.addEventListener('change', handleGeoJSONUpload);
+
+    // KML/KMZ
+    const kmlBtn = L.DomUtil.create('label', 'btn btn-success', container);
+    kmlBtn.innerText = 'Upload KML/KMZ';
+    const kmlInput = L.DomUtil.create('input', 'file-input', kmlBtn);
+    kmlInput.type = 'file'; kmlInput.accept = '.kml,.kmz';
+    kmlInput.addEventListener('change', handleKMLUpload);
+
+    // Shapefile
+    const shpBtn = L.DomUtil.create('label', 'btn btn-warning', container);
+    shpBtn.innerText = 'Upload Shapefile (ZIP)';
+    const shpInput = L.DomUtil.create('input', 'file-input', shpBtn);
+    shpInput.type = 'file'; shpInput.accept = '.zip';
+    shpInput.addEventListener('change', handleShpUpload);
+
+    L.DomEvent.disableClickPropagation(container);
+    return container;
+  }
+});
+map.addControl(new UploadControl({ position: 'bottomright' }));
+
+const TasksControl = L.Control.extend({
+  onAdd: function(map) {
+    const container = L.DomUtil.create('div', 'map-tasks');
+    container.innerHTML = `
+  <strong>Suggested Tasks:</strong>
+  <div id="taskList"></div>
+  <hr>
+<div id="gridSliderContainer" style="display:none;">
+  <label class="form-label mt-1">Grid size (km)</label>
+  <input type="range" class="form-range" min="2" max="50" step="1" value="10" id="gridSizeSlider">
+  <div><small><span id="gridSizeValue">10</span> km</small></div>
+</div>
+
+`;
+
+    L.DomEvent.disableClickPropagation(container);
+    return container;
+  }
+});
+map.addControl(new TasksControl({ position: 'bottomright' }));
+document.addEventListener("input", function(e) {
+  if (e.target && e.target.id === "gridSizeSlider") {
+    gridSizeKm = parseInt(e.target.value);
+    document.getElementById("gridSizeValue").innerText = gridSizeKm;
+
+    // 🔄 Re-run grid analysis if it was the last task
+    if (window.lastGeoJSON && window.lastTask === "Point Concentration Grid") {
+      runTask("Point Concentration Grid", window.lastGeoJSON);
+    }
+  }
+});
+
+
+function updateSuggestedTasks(geojson) {
+    const slider = document.getElementById("gridSliderContainer");
+if (slider) slider.style.display = "none";
+
+  const taskContainer = document.getElementById('taskList');
+  taskContainer.innerHTML = '';
+  if (!geojson.features || geojson.features.length === 0) return;
+
+  const geometries = new Set(geojson.features.map(f => f.geometry.type));
+  geometries.forEach(type => {
+    const tasks = taskSuggestions[type] || [];
+    tasks.forEach(task => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline-secondary btn-sm task-btn';
+      btn.innerText = `${type}: ${task}`;
+      btn.onclick = () => runTask(task, geojson, type);
+      taskContainer.appendChild(btn);
+    });
+  });
+  if (geometries.has("Point") || geometries.has("MultiPoint")) {
+  const slider = document.getElementById("gridSliderContainer");
+  if (slider) slider.style.display = "block";
+}
+}
+
+// ------------- Turf.js Analysis ----------------
+let gridSizeKm = 10; // default grid size
+
+function runTask(task, geojson, geomType) {
+  analysisLayer.clearLayers();
+  window.lastGeoJSON = geojson;
+window.lastTask = task;
+
+  switch(task) {
+case "Point Concentration Grid":
+  analysisLayer.clearLayers();
+
+  const points = geojson.features.filter(
+    f => f.geometry && f.geometry.type === "Point"
+  );
+
+  if (points.length === 0) {
+    alert("No Point features found.");
+    return;
+  }
+
+  const bbox1 = turf.bbox(geojson);
+
+  // Grid size in km (safe default for Tunisia)
+const grid = turf.squareGrid(bbox1, gridSizeKm, { units: 'kilometers' });
+
+  const pointsFC = {
+    type: "FeatureCollection",
+    features: points
+  };
+
+  grid.features.forEach(cell => {
+    const count = turf.pointsWithinPolygon(pointsFC, cell).features.length;
+    cell.properties.count = count;
+  });
+
+  L.geoJSON(grid, {
+    style: f => ({
+      fillColor:
+        f.properties.count > 10 ? '#800026' :
+        f.properties.count > 5  ? '#BD0026' :
+        f.properties.count > 2  ? '#E31A1C' :
+        f.properties.count > 0  ? '#FD8D3C' :
+                                  '#FFEDA0',
+      weight: 1,
+      color: '#666',
+      fillOpacity: 0.6
+    }),
+    onEachFeature: (f, l) =>
+      l.bindPopup(`Points in cell: ${f.properties.count}`)
+  }).addTo(analysisLayer);
+
+  break;
+
+
+    case "Coverage (BBox Area)":
+      const bbox = turf.bbox(geojson);
+      const bboxPolygon = turf.bboxPolygon(bbox);
+      L.geoJSON(bboxPolygon, { color:'orange', fillOpacity:0.2 }).addTo(analysisLayer);
+      alert(`BBox Area: ${turf.area(bboxPolygon).toFixed(2)} m²`);
+      break;
+
+    case "Length Calculation":
+      let totalLength = 0;
+      geojson.features.forEach(f => totalLength += turf.length(f, {units:'kilometers'}));
+      alert(`Total length: ${totalLength.toFixed(2)} km`);
+    //   L.geoJSON(geojson, { color:'green' }).addTo(analysisLayer);
+      break;
+
+    case "Buffer 0.01°":
+      const buffered = turf.buffer(geojson, 0.01, {units:'degrees'});
+      L.geoJSON(buffered, { color:'purple', fillOpacity:0.2 }).addTo(analysisLayer);
+      break;
+
+    case "Area Calculation":
+      let totalArea = 0;
+      geojson.features.forEach(f => totalArea += turf.area(f));
+      alert(`Total area: ${totalArea.toFixed(2)} m²`);
+    //   L.geoJSON(geojson, { color:'blue', fillOpacity:0.2 }).addTo(analysisLayer);
+      break;
+
+    case "Centroid":
+      geojson.features.forEach(f => {
+        const centroid = turf.centroid(f);
+        L.circleMarker([centroid.geometry.coordinates[1], centroid.geometry.coordinates[0]], { radius:6, color:'red' }).addTo(analysisLayer);
+      });
+      break;
+
+    default:
+      alert("Task not implemented yet.");
+  }
+}
+
+// ------------- Upload Handlers ----------------
+function handleGeoJSONUpload(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event){
+    try { showGeoJSON(JSON.parse(event.target.result)); }
+    catch(err){ alert('Invalid GeoJSON file.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function handleKMLUpload(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event){
+    const parser = new DOMParser();
+    if(file.name.endsWith('.kml')){
+      const kml = parser.parseFromString(event.target.result,'text/xml');
+      showGeoJSON(toGeoJSON.kml(kml));
+    } else if(file.name.endsWith('.kmz')){
+      JSZip.loadAsync(event.target.result).then(zip=>{
+        const kmlFile = Object.keys(zip.files).find(f=>f.endsWith('.kml'));
+        return zip.files[kmlFile].async('string');
+      }).then(kmlText=>{
+        const kmlDoc = parser.parseFromString(kmlText,'text/xml');
+        showGeoJSON(toGeoJSON.kml(kmlDoc));
+      }).catch(err=>alert('Invalid KMZ file.'));
+    }
+  };
+  if(file.name.endsWith('.kmz')) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+  e.target.value = '';
+}
+
+function handleShpUpload(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(event){
+    shp(event.target.result).then(showGeoJSON).catch(err=>alert('Invalid Shapefile ZIP.'));
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = '';
+}
+
+
+function analyzeAttributes(geojson) {
+    const summaryDiv = document.getElementById("layerSummaryContent");
+    summaryDiv.innerHTML = ""; // reset
+
+    const features = geojson.features;
+    if (!features || features.length === 0) return;
+
+    // Detect geometry type
+    const geomType = features[0].geometry.type;
+
+    // Build the attributes list
+    let attributes = {};
+    features.forEach(f => {
+        if (!f.properties) return;
+
+        for (let key in f.properties) {
+            if (!attributes[key]) {
+                attributes[key] = {
+                    type: typeof f.properties[key],
+                    values: []
+                };
+            }
+            attributes[key].values.push(f.properties[key]);
+        }
+    });
+
+    // Start HTML output
+    let html = `
+        <p><strong>Features:</strong> ${features.length}</p>
+        <p><strong>Geometry:</strong> ${geomType}</p>
+        <hr/>
+        <h6>Fields:</h6>
+    `;
+
+    // Attribute analysis
+    for (let key in attributes) {
+        let attr = attributes[key];
+        let uniqueVals = new Set(attr.values);
+
+        html += `<p><strong>${key}</strong> (${attr.type})<br/>`;
+
+        // For numeric fields → show min/max/avg
+        if (attr.type === "number") {
+            const nums = attr.values.filter(v => typeof v === "number");
+            const min = Math.min(...nums);
+            const max = Math.max(...nums);
+            const avg = nums.reduce((a,b)=>a+b,0) / nums.length;
+
+            html += `
+                min: ${min}<br/>
+                max: ${max}<br/>
+                avg: ${avg.toFixed(2)}<br/>
+            `;
+        } else {
+            // For text fields → show unique count
+            html += `unique values: ${uniqueVals.size}<br/>`;
+        }
+
+        html += `</p>`;
+    }
+
+    // Show panel
+    document.getElementById("attributesPanel").style.display = "block";
+    summaryDiv.innerHTML = html;
+}
+
+
+function generateFilters(geojson) {
+    const container = document.getElementById("filterContent");
+    container.innerHTML = ""; // reset
+
+    const features = geojson.features;
+    if (!features || features.length === 0) return;
+
+    let attributes = {};
+
+    // Detect attribute types and collect values
+    features.forEach(f => {
+        for (let key in f.properties) {
+            if (!attributes[key]) {
+                attributes[key] = { type: typeof f.properties[key], values: [] };
+            }
+            attributes[key].values.push(f.properties[key]);
+        }
+    });
+
+    // Build filter components
+    for (let key in attributes) {
+        const attr = attributes[key];
+        const values = attr.values;
+
+        container.innerHTML += `<strong>${key}</strong><br/>`;
+
+        if (attr.type === "string") {
+            // Create dropdown for string unique values
+            const uniqueVals = [...new Set(values)];
+            let selectHTML = `<select class="filter-select" data-field="${key}" style="width:100%; margin-bottom:10px">`;
+            selectHTML += `<option value="">-- All --</option>`;
+            uniqueVals.forEach(v => {
+                selectHTML += `<option value="${v}">${v}</option>`;
+            });
+            selectHTML += `</select>`;
+            container.innerHTML += selectHTML;
+
+        } else if (attr.type === "number") {
+            // Create slider for numeric values
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
+
+            container.innerHTML += `
+                <input type="range" class="filter-range" data-field="${key}"
+                    min="${minVal}" max="${maxVal}" value="${maxVal}"
+                    style="width:100%">
+                <div style="font-size:12px">
+                    Min: ${minVal} | Max: <span class="range-value">${maxVal}</span>
+                </div>
+                <br/>
+            `;
+        }
+    }
+
+    // Show the panel
+    document.getElementById("filterPanel").style.display = "block";
+
+    // Activate listeners
+    activateFilterListeners();
+}
+
+let filteredLayer
+function applyFilters() {
+    if (!window.lastGeoJSON) return;
+
+    let filtered = JSON.parse(JSON.stringify(window.lastGeoJSON)); // clone
+
+    const selects = document.querySelectorAll(".filter-select");
+    const ranges = document.querySelectorAll(".filter-range");
+
+    // Apply string filters
+    selects.forEach(sel => {
+        const field = sel.dataset.field;
+        const value = sel.value;
+
+        if (value) {
+            filtered.features = filtered.features.filter(
+                f => f.properties[field] == value
+            );
+        }
+    });
+
+    // Apply numeric filters
+    ranges.forEach(range => {
+        const field = range.dataset.field;
+        const maxRange = Number(range.value);
+
+        filtered.features = filtered.features.filter(
+            f => Number(f.properties[field]) <= maxRange
+        );
+    });
+
+    // Clear previous filtered layer
+    if (filteredLayer) {
+        map.removeLayer(filteredLayer);
+        layerControl.removeLayer(filteredLayer);
+    }
+
+    // Add new filtered layer
+    filteredLayer = L.geoJSON(filtered, {
+        onEachFeature: function (feature, layer) {
+            let popup = "";
+            for (let key in feature.properties) {
+                popup += `<b>${key}:</b> ${feature.properties[key]}<br/>`;
+            }
+            layer.bindPopup(popup);
+        }
+    }).addTo(map);
+    layerControl.addOverlay(filteredLayer, "Filtered Layer");
+
+}
+
+
+function activateFilterListeners() {
+    // For dropdowns
+    document.querySelectorAll(".filter-select").forEach(sel => {
+        sel.addEventListener("change", applyFilters);
+    });
+
+    // For sliders
+    document.querySelectorAll(".filter-range").forEach(range => {
+        range.addEventListener("input", function() {
+            this.parentNode.querySelector(".range-value").textContent = this.value;
+            applyFilters();
+        });
+    });
+}
+
+</script>
+</body>
+</html>
