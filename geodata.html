@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spatial Data Analyzer</title>
+  <title>Spatial Data Analyzer </title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Leaflet CSS -->
@@ -392,6 +392,10 @@ function generateFilters(geojson) {
 let filteredLayer
 function applyFilters() {
     if (!window.lastGeoJSON) return;
+// Hide/uncheck uploaded layer
+if (map.hasLayer(featureGroup)) {
+    map.removeLayer(featureGroup);  // removes from map, layer control checkbox becomes unchecked
+}
 
     let filtered = JSON.parse(JSON.stringify(window.lastGeoJSON)); // clone
 
