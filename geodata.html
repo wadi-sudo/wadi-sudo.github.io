@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spatial Data Analyzer V0</title>
+  <title>Spatial Data Analyzer</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Leaflet CSS -->
@@ -145,10 +145,14 @@ map.removeLayer(filteredLayer)
     map.fitBounds(featureGroup.getBounds());
     layerControl.addOverlay(featureGroup, "Uploaded Layer");
     window.lastGeoJSON = geojson;
-    generateLayerSummary(geojson)
-generateFilters(geojson);
-populateChartFieldSelect(geojson);  // <-- ADD THIS
-
+//     generateLayerSummary(geojson)
+// generateFilters(geojson);
+// populateChartFieldSelect(geojson);  // <-- ADD THIS
+    setTimeout(() => {
+        generateLayerSummary(geojson);
+        generateFilters(geojson);
+        populateChartFieldSelect(geojson);
+    }, 2000);
 
 
   }
@@ -353,7 +357,7 @@ function generateFilters(geojson) {
         if (attr.type === "string") {
             // Create dropdown for string unique values
             const uniqueVals = [...new Set(values)];
-            let selectHTML = `<select class="filter-select" data-field="${key}" style="width:100%; margin-bottom:10px">`;
+            let selectHTML = `<select class="filter-select form-select form-select-sm mb-2" data-field="${key}" style="width:100%; margin-bottom:10px">`;
             selectHTML += `<option value="">-- All --</option>`;
             uniqueVals.forEach(v => {
                 selectHTML += `<option value="${v}">${v}</option>`;
