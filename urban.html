@@ -35,6 +35,7 @@ rel="stylesheet"
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
 
 <!-- Leaflet Routing Machine -->
@@ -1770,6 +1771,227 @@ function positionContainer(container, clickPoint) {
   container.style.left = x + 'px';
   container.style.top = y + 'px';
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////// GENERIC SERVICE GAP ANALYSIS CONTROL ////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+const GAP_ANALYSIS_LAYERS = [
+  { value: "Hôpital", label: "Hospitals", icon: "🏥", category: "health" },
+  { value: "Clinique", label: "Clinics", icon: "🏨", category: "health" },
+  { value: "Pharmacie", label: "Pharmacies", icon: "💊", category: "health" },
+  { value: "Cabinet médical", label: "Medical Offices", icon: "🩺", category: "health" },
+  { value: "Centre médical", label: "Medical Centers", icon: "🩺", category: "health" },
+  { value: "Dispensaire", label: "Dispensaries", icon: "🩺", category: "health" },
+  { value: "Laboratoire d’analyses", label: "Laboratories", icon: "🧪", category: "health" },
+  { value: "Imagerie médicale", label: "Imaging Centers", icon: "🩻", category: "health" },
+  { value: "Police", label: "Police Stations", icon: "👮", category: "security" },
+  { value: "Garde nationale", label: "Garde Nationale", icon: "🪖", category: "security" },
+  { value: "Protection civile", label: "Protection Civile", icon: "🚒", category: "security" },
+  { value: "Douane", label: "Douane", icon: "🛃", category: "security" },
+  { value: "Station taxi", label: "Taxi Stations", icon: "🚕", category: "transport" },
+  { value: "Station bus", label: "Bus Stations", icon: "🚌", category: "transport" },
+  { value: "Station metro", label: "Metro Stations", icon: "🚇", category: "transport" },
+  { value: "Station louage", label: "Louage Stations", icon: "🚐", category: "transport" },
+  { value: "Gare", label: "Train Stations", icon: "🚆", category: "transport" }
+];
+
+const gapToggleBtn = L.easyButton(
+  'fa-magnifying-glass-location',
+  function () {
+    const ctrl = document.getElementById('hospitalGapControl');
+    const isVisible = ctrl.style.display !== 'none';
+
+    ctrl.style.display = isVisible ? 'none' : 'block';
+
+    if (isVisible) {
+      document.getElementById('toggleGap').checked = false;
+      desertLayer.clearLayers();
+      document.getElementById('gapStats').innerHTML = '';
+    }
+  },
+  'Service Gap Analysis'
+);
+
+gapToggleBtn.addTo(map);
+map.on('click', () => {
+  document.getElementById('hospitalGapControl').style.display = 'none';
+});
+
+
+const HospitalGapAnalysis = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd: function (map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+    container.id = 'hospitalGapControl';
+
+    container.style.backgroundColor = 'white';
+    container.style.padding = '10px';
+    container.style.width = '220px';
+    container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+    container.style.borderRadius = '5px';
+    container.style.fontFamily = 'Inter, sans-serif';
+
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+
+    const optionsHTML = GAP_ANALYSIS_LAYERS.map((layer, i) =>
+      `<option value="${i}">${layer.icon} ${layer.label}</option>`
+    ).join('');
+
+    container.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px;">
+        <i class="fas fa-magnifying-glass-location"></i> Service Gap Finder
+      </div>
+
+      <div style="font-size: 11px; margin-bottom: 4px;">Layer</div>
+      <select id="gapLayerSelect" class="form-select form-select-sm" style="margin-bottom: 10px;">
+        ${optionsHTML}
+      </select>
+
+      <div style="font-size: 11px; margin-bottom: 5px;">
+        Radius: <span id="radiusVal" style="font-weight:bold; color:#d62828;">15</span> km
+      </div>
+      <input id="gapRadiusRange" type="range" min="5" max="50" step="5" value="15" 
+             style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+      
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; border-top: 1px solid #eee; padding-top: 8px;">
+        <input type="checkbox" id="toggleGap" style="cursor:pointer;">
+        <label for="toggleGap" style="cursor:pointer; margin:0;">Show High-Risk Zones</label>
+      </div>
+      <div id="gapStats" style="margin-top: 8px; font-size: 10px; color: #666; line-height: 1.2;"></div>
+
+      <div id="gapLoader" style="
+        display:none;
+        margin-top:8px;
+        font-size:11px;
+        color:#555;
+        text-align:center;
+      ">
+        <i class="fas fa-spinner fa-spin"></i><br>
+        Analyzing coverage...
+      </div>
+    `;
+    return container;
+  }
+});
+
+const hospitalGapControl = new HospitalGapAnalysis();
+map.addControl(hospitalGapControl);
+document.getElementById('hospitalGapControl').style.display = 'none';
+
+let desertLayer = L.layerGroup().addTo(map);
+
+function showGapLoader(show) {
+  document.getElementById('gapLoader').style.display = show ? 'block' : 'none';
+  document.getElementById('toggleGap').disabled = show;
+  document.getElementById('gapRadiusRange').disabled = show;
+  document.getElementById('gapLayerSelect').disabled = show;
+}
+
+async function runGapAnalysis() {
+  desertLayer.clearLayers();
+
+  const isEnabled = document.getElementById('toggleGap').checked;
+  const radiusKm = parseInt(document.getElementById('gapRadiusRange').value);
+  const layerIndex = parseInt(document.getElementById('gapLayerSelect').value);
+  const selectedLayer = GAP_ANALYSIS_LAYERS[layerIndex];
+  const statsDiv = document.getElementById('gapStats');
+
+  if (!isEnabled) {
+    statsDiv.innerHTML = "";
+    return;
+  }
+
+  showGapLoader(true);
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  if (allPOIs.length === 0 || govFeatures.length === 0) {
+    showToast("⚠️ Data is still loading, please wait...");
+    document.getElementById('toggleGap').checked = false;
+    showGapLoader(false);
+    return;
+  }
+
+  // 1. Filter facilities for the chosen layer
+  const facilities = [...allPOIs, ...simulatedPOIs]
+    .filter(poi => poi.properties.Valeur_POI === selectedLayer.value)
+    .map(poi => turf.point([poi.latlng.lng, poi.latlng.lat]));
+
+  if (facilities.length === 0) {
+    showToast(`No ${selectedLayer.label} found in data.`);
+    showGapLoader(false);
+    return;
+  }
+
+  // 2. Build Served Area
+  const facilityCollection = turf.featureCollection(facilities);
+  const buffered = turf.buffer(facilityCollection, radiusKm, { units: 'kilometers' });
+  let servedArea = buffered.features[0];
+
+  for (let i = 1; i < buffered.features.length; i++) {
+    servedArea = turf.union(servedArea, buffered.features[i]);
+    statsDiv.innerHTML = `Merging ${i + 1} / ${buffered.features.length} ${selectedLayer.label.toLowerCase()} buffers...`;
+  }
+
+  let totalAtRisk = 0;
+  let desertCount = 0;
+
+  // 3. Process Delegations
+  govFeatures.forEach((gov, i) => {
+    try {
+      const diff = turf.difference(
+        turf.cleanCoords(gov),
+        turf.cleanCoords(servedArea)
+      );
+      statsDiv.innerHTML = `Analyzing zone ${i + 1} / ${govFeatures.length}...`;
+
+      if (diff && diff.geometry && diff.geometry.coordinates.length > 0) {
+        const pop = Number(gov.properties.population) || 0;
+        totalAtRisk += pop;
+        desertCount++;
+
+        L.geoJSON(diff, {
+          style: {
+            color: '#d62828',
+            fillColor: '#e63946',
+            weight: 1.5,
+            fillOpacity: 0.4,
+            dashArray: '4, 4'
+          }
+        })
+        .bindPopup(`<b>${selectedLayer.icon} ${selectedLayer.label} Desert</b><br>Pop: ${pop.toLocaleString()}`)
+        .addTo(desertLayer);
+      }
+    } catch (err) {
+      console.error("Spatial error:", err);
+    }
+  });
+
+  statsDiv.innerHTML = `
+    <b>${selectedLayer.icon} ${selectedLayer.label} Gap:</b><br>
+    ${desertCount} underserved zone(s)<br>
+    ~${totalAtRisk.toLocaleString()} people at risk.
+  `;
+  showGapLoader(false);
+  map.flyTo([35.04, 9.56], 7);
+}
+
+// Global delegated listeners
+document.addEventListener('input', function (e) {
+  if (e.target && e.target.id === 'gapRadiusRange') {
+    document.getElementById('radiusVal').innerText = e.target.value;
+    if (document.getElementById('toggleGap').checked) runGapAnalysis();
+  }
+});
+
+document.addEventListener('change', function (e) {
+  if (e.target && (e.target.id === 'toggleGap' || e.target.id === 'gapLayerSelect')) {
+    if (e.target.id === 'gapLayerSelect' && !document.getElementById('toggleGap').checked) return;
+    runGapAnalysis();
+  }
+});
+
   </script>
 </body>
 </html>
