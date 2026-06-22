@@ -55,7 +55,7 @@ rel="stylesheet"
 
     <a class="navbar-brand text-white" href="#" onclick="location.reload();" title="Click to reload the dashboard" style="justify-content: center;display: flex;align-items: center; width: 100%; text-wrap: inherit;">
       <i class="fas fa-globe-africa me-2"></i>
-      Urban Awareness
+      SYNOPTICA
    
     </a>
     
@@ -349,9 +349,9 @@ const overlayMaps = {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////// ADD EASY-BUTTONS /////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-L.control.zoom({
-  position: 'topleft'
-}).addTo(map);
+// L.control.zoom({
+//   position: 'topleft'
+// }).addTo(map);
 
 function sidebarreturn() {
 				ctlSidebar.toggle();
@@ -363,17 +363,17 @@ function sidebarreturn() {
 				.setPosition("topleft")
 				.addTo(map);
 
-L.easyButton({
-    position: 'topleft',       // top right corner
-    states: [{
-        stateName: 'go-to-page',
-        icon: 'fa-refresh',  // font awesome icon
-        title: 'Return to previous page',
-        onClick: function(btn, map){
-            window.location.href = './cesium.html'; // redirect
-        }
-    }]
-}).addTo(map);
+// L.easyButton({
+//     position: 'topleft',       // top right corner
+//     states: [{
+//         stateName: 'go-to-page',
+//         icon: 'fa-refresh',  // font awesome icon
+//         title: 'Return to previous page',
+//         onClick: function(btn, map){
+//             window.location.href = './cesium.html'; // redirect
+//         }
+//     }]
+// }).addTo(map);
 
 L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
 
@@ -1127,7 +1127,7 @@ osmSearchContainer.innerHTML = `
   </div>
 `;
 
-const osmSearchControl = L.control({ position: 'topright' });
+const osmSearchControl = L.control({ position: 'topleft' });
 osmSearchControl.onAdd = function () {
   // Prevent clicks on search container from propagating to map
   L.DomEvent.disableClickPropagation(osmSearchContainer);
@@ -1145,7 +1145,7 @@ const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
   btn.button.style.display = 'none'; // hide button
   searchBox.style.display = 'block'; // show search box
   osmInput.focus();
-}, 'Search place').setPosition("topright").addTo(map);
+}, 'Search place').setPosition("topleft").addTo(map);
 
 // Collapse search box and show button
 function collapseSearch() {
@@ -1626,7 +1626,7 @@ let analysisMode = "analysis"; // analysis | simulation
 let simulatedPOIs = [];
 let baselineTotalScore = null;
 L.easyButton({
-  position: 'topright',
+  position: 'topleft',
   states: [{
     stateName: 'simulation',
     icon: 'fa-wand-magic-sparkles',
@@ -1823,7 +1823,7 @@ map.on('click', () => {
 
 
 const HospitalGapAnalysis = L.Control.extend({
-  options: { position: 'topright' },
+  options: { position: 'topleft' },
   onAdd: function (map) {
     const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
     container.id = 'hospitalGapControl';
