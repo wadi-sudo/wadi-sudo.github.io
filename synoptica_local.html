@@ -1,0 +1,2570 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GEO-LENS</title>
+  <meta name="viewport" charset="utf-8" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="urban/plugin/L.Control.Sidebar.css" />
+  <script src="urban/plugin/L.Control.Sidebar.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet-easybutton@2/src/easy-button.js"></script>
+<link rel="stylesheet" href="urban/plugin/style.css" />
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css"
+/>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+<!-- <script src="https://unpkg.com/geotiff@2.1.3/dist-browser/geotiff.js"></script> -->
+<script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+<script src="urban/plugin/L.Control.MousePosition.js"></script>
+<link rel="stylesheet" href="urban/plugin/L.Control.MousePosition.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+rel="stylesheet"
+>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+
+<!-- Leaflet Routing Machine -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+/>
+
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+</head>
+
+<body>
+
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+
+    <a class="navbar-brand text-white" href="#" onclick="location.reload();" title="Click to reload the dashboard" style="justify-content: center;display: flex;align-items: center; width: 100%; text-wrap: inherit;">
+      <i class="fas fa-globe-africa me-2"></i>
+      <!-- Urban Awareness -->
+       SYNOPTICA | Geo-Intelligence Location System
+   
+    </a>
+    
+  </nav>
+
+<div id="map"></div>
+
+<div id="side-bar" style="background-color: #f1f1f1; font-family:Inter,sans-serif; font-size:14px;">
+  <a href="javascript:void(0)" class="closebtn" onclick="sidebarreturn()">&times;</a>
+  <br>
+  <div class="sidebar-content">
+    <h3>📊 Urban Score</h3>
+    <p>
+    Measures access to nearby urban services using proximity-based spatial analysis.
+    A diversity bonus is applied when multiple service categories are available.
+    </p>
+
+    <details open>
+      <summary>🩺 Health</summary>
+      <ul>
+        <li>💊 Pharmacies (≤1 km): 15 pts</li>
+        <li>🩺 Primary Care (≤1.5 km): 25 pts<br><small style="color:#555;">Medical offices, centers & dispensaries</small></li>
+        <li>🧪 Laboratories (≤2 km): 10 pts</li>
+        <li>🩻 Imaging Centers (≤2 km): 10 pts</li>
+        <li>🏨 Clinics (≤3 km): 15 pts</li>
+        <li>🏥 Hospitals (≤5 km): 25 pts</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>🚓 Security</summary>
+      <ul>
+        <li>👮 Police (≤2 km): 30 pts</li>
+        <li>🪖 Garde nationale (≤3 km): 25 pts</li>
+        <li>🚒 Protection civile (≤4 km): 25 pts</li>
+        <li>🛃 Douane (≤5 km): 10 pts</li>
+      </ul>
+    </details>
+
+    <details>
+      <summary>🚌 Transport</summary>
+      <ul>
+        <li>🚕 Taxi stations (≤0.5 km): 10 pts</li>
+        <li>🚌 Bus stations (≤0.8 km): 15 pts</li>
+        <li>🚇 Metro stations (≤1 km): 20 pts</li>
+        <li>🚐 Louage stations (≤2 km): 15 pts</li>
+        <li>🚆 Train stations (≤3 km): 20 pts</li>
+      </ul>
+    </details>
+    <hr>
+ <h2>👥 Population Adjustment</h2>
+
+  <p>
+    To better reflect real urban conditions, the final score is adjusted using
+    <b>population pressure</b>.
+  </p>
+
+  <p>
+    Each clicked location is linked to its corresponding
+    <b>Delegation</b>, from which an official population value is retrieved.
+    This value is normalized to produce a <b>Population Pressure Score</b>
+    between <b>0</b> (low pressure) and <b>1</b> (high pressure).
+  </p>
+
+  <p><b>Final score formula:</b></p>
+
+  <pre style="background:#eee;padding:8px;border-radius:6px;font-size:13px">
+Final Score = Accessibility Score × (0.7 + 0.3 × Population Pressure)
+  </pre>
+
+  <p style="font-size:13px;color:#555">
+    • 70% of the score reflects access to urban services (POI proximity)<br>
+    • 30% reflects population-induced urban pressure
+  </p>
+
+
+  <hr>
+    <p><strong>Total Score Meaning:</strong></p>
+ <ul>
+  <li>≥130 → Good access 🟢</li>
+  <li>70–129 → Moderate access 🟠</li>
+  <li> <70 → Poor access 🔴</li>
+</ul>
+
+  </div>
+</div>
+
+
+  
+
+  <script>
+
+const map = L.map('map', {
+  center: [36.48, 9.61],
+  zoom: 8,
+  zoomControl: false  // disable default top-left zoom
+});
+
+    const topoesri = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+).addTo(map);
+// OpenStreetMap
+const osm = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }
+);
+
+// Esri Satellite Imagery
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/' +
+  'World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
+    attribution: 'Tiles © Esri',
+    maxZoom: 19
+  }
+);
+
+
+const allPOIs = [];
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD GEOJSON DATA /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const healthIcon = L.icon({
+  iconUrl: 'urban/icons/red-cross.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGrouphealth = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+///
+const securityIcon = L.icon({
+  iconUrl: 'urban/icons/poisecurity.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGroupsecurity = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+/////
+const transportIcon = L.icon({
+  iconUrl: 'urban/icons/transportation.png',   // your icon
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -25]
+});
+const clusterGrouptransport = L.markerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: true,
+  maxClusterRadius: 50
+});
+    // 3. Load your GeoJSON
+   
+
+
+fetch('urban/data/health.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poihealth = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: healthIcon });
+      // },
+      const marker = L.marker(latlng, { icon: healthIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'health',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGrouphealth.addLayer(poihealth);
+    // map.addLayer(clusterGrouphealth);
+  });
+/////
+fetch('urban/data/security.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poisecurity = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: securityIcon });
+      // },
+      const marker = L.marker(latlng, { icon: securityIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'security',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGroupsecurity.addLayer(poisecurity);
+    // map.addLayer(clusterGroupsecurity);
+  });
+/////
+fetch('urban/data/transport.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    const poitransport = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+      //   return L.marker(latlng, { icon: transportIcon });
+      // },
+      const marker = L.marker(latlng, { icon: transportIcon });
+
+allPOIs.push({
+  layer: marker,
+  latlng: latlng,
+  category: 'transport',
+  properties: feature.properties
+});
+
+return marker;
+},
+
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(`
+          <b>Nom :</b> ${feature.properties.Name_POI_F || '—'}<br>
+          <b>Description :</b> ${feature.properties.Valeur_POI || '—'}
+        `);
+      }
+    });
+
+    clusterGrouptransport.addLayer(poitransport);
+    // map.addLayer(clusterGrouptransport);
+  });
+
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// BASE MAPS/////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+const baseMaps = {
+  "OpenStreetMap": osm,
+  "Esri Satellite": esriSat,
+  "Esri Topographie":topoesri
+};
+
+
+
+const overlayMaps = {
+  "Health": clusterGrouphealth,
+  "Security": clusterGroupsecurity,
+  "Transportation": clusterGrouptransport
+};
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////// ADD EASY-BUTTONS /////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// L.control.zoom({
+//   position: 'topleft'
+// }).addTo(map);
+
+function sidebarreturn() {
+				ctlSidebar.toggle();
+			}
+			ctlSidebar = L.control.sidebar("side-bar").addTo(map);
+			ctlEasybutton = L.easyButton("fa fa-bars", function () {
+				ctlSidebar.toggle();
+			})
+				.setPosition("topleft")
+				.addTo(map);
+
+// L.easyButton({
+//     position: 'topleft',       // top right corner
+//     states: [{
+//         stateName: 'go-to-page',
+//         icon: 'fa-refresh',  // font awesome icon
+//         title: 'Return to previous page',
+//         onClick: function(btn, map){
+//             window.location.href = './cesium.html'; // redirect
+//         }
+//     }]
+// }).addTo(map);
+
+L.control.mousePosition({ position: "bottomleft", prefix: "Lat : Long" }).addTo(map);
+
+L.control.layers(baseMaps, overlayMaps, {
+  collapsed: true,
+  position: 'bottomleft'
+}).addTo(map);
+
+function showToast(message) {
+  const toast = L.control({ position: 'bottomright' });
+
+  toast.onAdd = function () {
+    const div = L.DomUtil.create('div', 'map-toast');
+    div.innerHTML = message;
+    // div.style.zIndex = '5000'
+    return div;
+  };
+
+  toast.addTo(map);
+
+  setTimeout(() => {
+    map.removeControl(toast);
+  }, 10000);
+}
+showToast('Click anywhere on the map')
+
+
+map.locate({ setView: false, maxZoom: 16 });
+
+// When location is found, fly to it
+map.on('locationfound', function(e) {
+    map.flyTo(e.latlng, 14); // Zoom 16, you can adjust
+   
+});
+
+// If location is not found
+map.on('locationerror', function(e) {
+    showToast("Could not get your location.");
+});
+///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////// Logic////////////////////////////
+function runFullAnalysis(latlng, includeSimulation = false) {
+  const poiSource = includeSimulation
+    ? [...allPOIs, ...simulatedPOIs]
+    : allPOIs;
+
+  const health = analyzeHealth(latlng, poiSource);
+  const security = analyzeSecurity(latlng, poiSource);
+  const transport = analyzeTransport(latlng, poiSource);
+  const population = analyzePopulation(latlng);
+
+  let total =
+    health.totalScore +
+    security.totalScore +
+    transport.totalScore;
+
+  if (population) {
+    total = Math.round(total * (0.7 + 0.3 * population.pressureScore));
+  }
+
+  return { health, security, transport, population, total };
+}
+////
+function distanceMeters(a, b) {
+  return map.distance(a, b);
+}
+
+const securityConfig = {
+  police: {
+    icon: "👮",
+    label: "Police",
+    radius: 2000,
+    values: ["Police"],
+    score: 30
+  },
+  gendarmerie: {
+    icon: "🪖",
+    label: "Garde nationale",
+    radius: 3000,
+    values: ["Garde nationale"],
+    score: 25
+  },
+  civil: {
+    icon: "🚒",
+    label: "Protection civile",
+    radius: 4000,
+    values: ["Protection civile"],
+    score: 25
+  },
+  customs: {
+    icon: "🛃",
+    label: "Douane",
+    radius: 5000,
+    values: ["Douane"],
+    score: 10
+  }
+};
+const transportConfig = {
+  taxi: {
+    icon: "🚕",
+    label: "Taxi stations",
+    radius: 500,
+    values: ["Station taxi"],
+    score: 10
+  },
+  bus: {
+    icon: "🚌",
+    label: "Bus stations",
+    radius: 800,
+    values: ["Station bus"],
+    score: 15
+  },
+  metro: {
+    icon: "🚇",
+    label: "Metro stations",
+    radius: 1000,
+    values: ["Station metro"],
+    score: 20
+  },
+  louage: {
+    icon: "🚐",
+    label: "Louage stations",
+    radius: 2000,
+    values: ["Station louage"],
+    score: 15
+  },
+  rail: {
+    icon: "🚆",
+    label: "Train stations",
+    radius: 3000,
+    values: ["Gare"],
+    score: 20
+  }
+};
+
+
+const healthConfig = {
+  pharmacy: {
+    icon: "💊",
+    label: "Pharmacies",
+    radius: 1000,
+    values: ["Pharmacie"],
+    score: 15
+  },
+  primary: {
+    icon: "🩺",
+    label: "Primary Care",
+    radius: 1500,
+    values: [
+      "Cabinet médical",
+      "Centre médical",
+      "Dispensaire"
+    ],
+    score: 25
+  },
+  laboratory: {
+    icon: "🧪",
+    label: "Laboratories",
+    radius: 2000,
+    values: ["Laboratoire d’analyses"],
+    score: 10
+  },
+  imaging: {
+    icon: "🩻",
+    label: "Imaging Centers",
+    radius: 2000,
+    values: ["Imagerie médicale"],
+    score: 10
+  },
+  clinic: {
+    icon: "🏨",
+    label: "Clinics",
+    radius: 3000,
+    values: ["Clinique"],
+    score: 15
+  },
+  hospital: {
+    icon: "🏥",
+    label: "Hospitals",
+    radius: 5000,
+    values: ["Hôpital"],
+    score: 25
+  }
+};
+
+const serviceDescriptions = {
+  "Primary Care":
+    "Medical offices, centers, and dispensaries."
+};
+let usedPOIs = [];
+
+function analyzeHealth(latlng,poiSource) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = []; // ✅ NEW
+
+  for (const key in healthConfig) {
+    const cfg = healthConfig[key];
+    // [...allPOIs, ...simulatedPOIs].filter(...)
+
+    const found = poiSource.filter(poi => {
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found); // ✅ NEW
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  // diversity bonus
+  if (servicesFound >= 4) {
+    totalScore += 10;
+  }
+
+  return {
+    totalScore,
+    breakdown,
+    usedPOIs // ✅ NEW
+  };
+}
+
+function analyzeSecurity(latlng,poiSource) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = [];
+
+  for (const key in securityConfig) {
+    const cfg = securityConfig[key];
+
+    const found = poiSource.filter(poi => {
+      if (poi.category !== 'security') return false;
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found);
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  if (servicesFound >= 3) {
+    totalScore += 10;
+  }
+
+  return { totalScore, breakdown, usedPOIs };
+}
+function analyzeTransport(latlng,poiSource) {
+  let totalScore = 0;
+  let breakdown = [];
+  let servicesFound = 0;
+  let usedPOIs = [];
+
+  for (const key in transportConfig) {
+    const cfg = transportConfig[key];
+
+    const found = poiSource.filter(poi => {
+      if (poi.category !== 'transport') return false;
+      if (!cfg.values.includes(poi.properties.Valeur_POI)) return false;
+      return map.distance(latlng, poi.latlng) <= cfg.radius;
+    });
+
+    if (found.length > 0) {
+      totalScore += cfg.score;
+      servicesFound++;
+    }
+
+    usedPOIs.push(...found);
+
+    breakdown.push({
+      icon: cfg.icon,
+      label: cfg.label,
+      count: found.length,
+      radius: cfg.radius
+    });
+  }
+
+  if (servicesFound >= 3) {
+    totalScore += 10;
+  }
+
+  return { totalScore, breakdown, usedPOIs };
+}
+
+
+function interpretScore(score) {
+  if (score >= 70) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 40) return { label: "MODERATE", color: "orange", icon: "🟠" };
+  return { label: "POOR", color: "red", icon: "🔴" };
+}
+
+// function interpretTotalScore(score) {
+//   if (score >= 160) return { label: "GOOD", color: "green", icon: "🟢" };
+//   if (score >= 90) return { label: "MODERATE", color: "orange", icon: "🟠" };
+//   return { label: "POOR", color: "red", icon: "🔴" };
+// }
+function interpretTotalScore(score) {
+  if (score >= 130) return { label: "GOOD", color: "green", icon: "🟢" };
+  if (score >= 70)  return { label: "MODERATE", color: "orange", icon: "🟠" };
+  return { label: "POOR", color: "red", icon: "🔴" };
+}
+
+// -------------------- Floating Score Badge --------------------
+const scoreBadge = L.control({ position: 'topright' });
+
+scoreBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'score-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = 'Area Score: –';
+  return div;
+};
+scoreBadge.addTo(map);
+
+
+function updateGlobalBadge(score) {
+  const status = interpretTotalScore(score);
+  const div = document.querySelector('.score-badge');
+  div.innerHTML = `
+    Urban Score: ${score}<br>
+    ${status.icon} ${status.label}
+  `;
+}
+
+// -------------------- Popup Builder --------------------
+
+function renderDomainSection(title, icon, result, open = false) {
+
+const status = interpretScore(result.totalScore);
+
+let html = `
+  <details ${open ? "open" : ""} style="margin-top:6px">
+    <summary style="
+      cursor:pointer;
+      font-weight:600;
+      outline:none;
+    ">
+      ${icon} ${title}
+      <span style="color:${status.color}; margin-left:6px">
+        ${status.icon} ${status.label}
+      </span>
+      <small>(${result.totalScore})</small>
+    </summary>
+
+    <ul style="padding-left:18px; margin:6px 0;">
+`;
+
+result.breakdown.forEach(item => {
+  if (item.count > 0) {
+    html += `
+      <li>
+        ${item.icon} ${item.label}:
+        <b>${item.count}</b>
+        <small>(≤${item.radius / 1000} km)</small>
+        ${
+          item.label === "Primary Care"
+            ? `<br><small style="color:#555">
+                 Medical offices, centers & dispensaries
+               </small>`
+            : ""
+        }
+      </li>
+    `;
+  }
+});
+
+if (result.breakdown.filter(b => b.count > 0).length >= 4) {
+  html += `<li>🎁 Diversity bonus: +10</li>`;
+}
+
+html += `
+    </ul>
+  </details>
+`;
+
+return html;
+}
+
+
+function buildPopup(health, security, transport,nearestDistances,population,base,simulated) {
+
+let totalScore =
+  health.totalScore +
+  security.totalScore +
+  transport.totalScore;
+if (population) {
+  const factor = 0.7 + 0.3 * population.pressureScore;
+  totalScore = Math.round(totalScore * factor);
+}
+  updateGlobalBadge(totalScore);
+
+  let simulationHTML = "";
+
+const diff = simulated.total - base.total;
+if (diff!==0){
+  simulationHTML = `
+<hr>
+<b>🧪 Simulation Impact</b><br>
+Real Score : <b>${base.total}</b><br>
+Simulated Score : <b>${simulated.total}</b><br>
+Impact :
+<b style="color:${diff >= 0 ? 'green' : 'red'}">
+${diff >= 0 ? '+' : ''}${diff}
+</b>
+`;
+}
+
+
+let html = `
+  <div style="font-family:Inter,sans-serif; font-size:14px; line-height:1.4">
+    <b>📍 Area Overview</b><br>
+`;
+html += simulationHTML;
+
+html += renderDomainSection("Health", "🩺", health); // open by default
+html += renderDomainSection("Security", "🚓", security);
+html += renderDomainSection("Transport", "🚌", transport,true);
+
+html += `
+    <hr style="margin:6px 0">
+    <small style="color:#555">
+      Proximity-based spatial analysis Scores.
+    </small>
+  </div>
+`;
+if (nearestDistances.length) {
+  html += `
+    <details style="margin-top:6px">
+      <summary style="
+        cursor:pointer;
+        font-weight:600;
+        outline:none;
+      ">
+        📏 Nearest key services
+      </summary>
+
+      <ul style="padding-left:18px; margin:6px 0;">
+  `;
+
+  // nearestDistances.forEach(d => {
+  //   html += `
+  //     <li>
+  //       ${d.label}:
+  //       <b>${(d.distance / 1000).toFixed(1)} km</b>
+  //     </li>
+  //   `;
+  // });
+  nearestDistances.forEach(d => {
+  const color = valeurPOIColors[d.value] || '#333';
+  // html += `
+  //   <li>
+  //     <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
+  //     ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
+  //   </li>
+  // `;
+  html += `
+  <li style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+  <div>
+    <span style="display:inline-block;width:12px;height:12px;background:${color};margin-right:6px;border-radius:2px;"></span>
+    ${d.label}: <b>${(d.distance / 1000).toFixed(1)} km</b>
+  </div>
+
+  <button
+    onclick="routeToPOI(L.latLng(${d.lat}, ${d.lng}))"
+    style="
+      border:none;
+      background:#0d6efd;
+      color:white;
+      padding:1px 6px;
+      margin-bottom:2px;
+      font-size:12px;
+      border-radius:6px;
+      cursor:pointer;
+    ">
+        <i class="fas fa-route"></i>
+
+  </button>
+</li>
+
+  `;
+});
+
+
+  html += `
+      </ul>
+    </details>
+  `;
+}
+
+if (population) {
+  html += `
+    <details style="margin-top:6px">
+      <summary style="cursor:pointer;font-weight:600">
+        👥 Population context
+      </summary>
+
+      <ul style="padding-left:18px; margin:6px 0;">
+        <li><b>Delegation:</b> ${population.governorate}</li>
+        <li><b>Population:</b> ${population.population.toLocaleString()}</li>
+        <li><b>Pressure level:</b> ${population.level}</li>
+      </ul>
+    </details>
+  `;
+}
+
+
+
+return html;
+}
+
+// -------------------- Click Event with Highlights --------------------
+let clickMarker = null;
+let highlightLayer = L.layerGroup().addTo(map);
+
+
+// map.on("click", async function(e) {
+//   lastClickLatLng = e.latlng;
+
+//   if (routingControl) {
+//     map.removeControl(routingControl);
+//     routingControl = null;
+//   }
+//   if (clickMarker) map.removeLayer(clickMarker);
+
+//   clickMarker = L.circleMarker(e.latlng, {
+//     radius: 6,
+//     color: "#000",
+//     fillColor: "#fff",
+//     fillOpacity: 1
+//   }).addTo(map);
+
+//   const health = analyzeHealth(e.latlng);
+//   const security = analyzeSecurity(e.latlng);
+//   const transport = analyzeTransport(e.latlng);
+//   const nearestDistances = runNearestAnalysis(e.latlng);
+//   const population = analyzePopulation(e.latlng);
+
+//   // --- OPEN POPUP IMMEDIATELY ---
+//   const popup = L.popup({ maxWidth: 400 })
+//     .setLatLng(e.latlng)
+//     .setContent(buildPopup(health, security, transport, nearestDistances, population) +
+//                 `<hr><b>🧠 AI Area Analysis:</b><br><i>Loading...</i>`)
+//     .openOn(map);
+
+//   // --- FETCH AI RESPONSE ASYNC ---
+//   try {
+//     const aiText = await getAIAreaAnalysis(e.latlng.lat, e.latlng.lng);
+
+//     // Update popup content when AI response arrives
+//     popup.setContent(buildPopup(health, security, transport, nearestDistances, population) +
+//                      `<hr><b>🧠 AI Area Analysis:</b><br>${aiText}`);
+//   } catch (err) {
+//     popup.setContent(buildPopup(health, security, transport, nearestDistances, population) +
+//                      `<hr><b>🧠 AI Area Analysis:</b><br><i>Error loading AI response</i>`);
+//     console.error("AI error:", err);
+//   }
+
+//   // highlightPOIs([...health.usedPOIs, ...security.usedPOIs, ...transport.usedPOIs]);
+// });
+map.on("click", async function(e) {
+  lastClickLatLng = e.latlng;
+
+
+// ================== SIMULATION CLICK ==================
+if (analysisMode === "simulation") {
+    showSimulationSelector(e.latlng);
+    return;
+}
+////////////////////////////////////////////////////////////////////////
+const base = runFullAnalysis(e.latlng, false);
+const simulated = runFullAnalysis(e.latlng, true);
+
+  if (routingControl) {
+    map.removeControl(routingControl);
+    routingControl = null;
+  }
+  if (clickMarker) map.removeLayer(clickMarker);
+
+  clickMarker = L.circleMarker(e.latlng, {
+    radius: 6,
+    color: "#000",
+    fillColor: "#fff",
+    fillOpacity: 1
+  }).addTo(map);
+
+  // const health = analyzeHealth(e.latlng);
+  // const security = analyzeSecurity(e.latlng);
+  // const transport = analyzeTransport(e.latlng);
+  const health = simulated.health;
+  const security = simulated.security;
+  const transport = simulated.transport;
+  const nearestDistances = runNearestAnalysis(e.latlng);
+  const population = analyzePopulation(e.latlng);
+
+//   let totalScore =
+//   health.totalScore +
+//   security.totalScore +
+//   transport.totalScore;
+// if (population) {
+//   const factor = 0.7 + 0.3 * population.pressureScore;
+//   totalScore = Math.round(totalScore * factor);
+// }
+let totalScore=simulated.total
+// if (baselineTotalScore === null) {
+//   baselineTotalScore = totalScore;
+// }
+
+
+const areaData = {
+  health: {
+    totalScore: health.totalScore,
+    breakdown: health.breakdown
+  },
+  security: {
+    totalScore: security.totalScore,
+    breakdown: security.breakdown
+  },
+  transport: {
+    totalScore: transport.totalScore,
+    breakdown: transport.breakdown
+  },
+  nearest: nearestDistances,
+  population: population || null,
+  totalScore: totalScore // the computed final score
+};
+// console.log(areaData)
+  const popup = L.popup({ maxWidth: 400 })
+    .setLatLng(e.latlng)
+    .setContent(buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated))
+    .openOn(map);
+
+//  e.latlng.lat, e.latlng.lng
+	const wrapper = popup.getElement().querySelector('.leaflet-popup-content-wrapper');
+if (wrapper) {
+  wrapper.style.maxHeight = '420px'; // hauteur max
+  wrapper.style.overflowY = 'auto';   // scroll vertical si dépasse
+}
+  // Attach click listener for AI button after popup is opened
+  setTimeout(() => {
+    const btn = popup.getElement().querySelector(".ai-trigger-btn");
+    const resultDiv = popup.getElement().querySelector(".ai-result");
+
+    if (!btn) return;
+
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.innerText = "Loading...";
+      try {
+        const aiText = await getAIAreaAnalysis(areaData);
+        resultDiv.innerHTML = `<i>${aiText}</i>`;
+      } catch (err) {
+        resultDiv.innerHTML = `<i>Error loading AI response</i>`;
+        console.error(err);
+      }
+    });
+  }, 50); // slight delay to ensure DOM exists
+
+  const elevation = await getElevationAt(e.latlng.lat,e.latlng.lng)
+  const slope = await getSlopeAt(e.latlng.lat,e.latlng.lng)
+  
+const landcover = await getLandCoverAtPoint(e.latlng.lat,e.latlng.lng, {
+    geoserverUrl: 'http://localhost:8081/geoserver/wms',
+    layerName: 'SRTM:landcover',
+  });
+
+  updateTerrainBadge(elevation,slope,landcover)
+
+console.log("landcover:",landcover.className);
+const env = await getEnvironmentalData(e.latlng.lat,e.latlng.lng);
+
+updateEnvBadge(env)
+
+});
+
+function buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated) {
+  let html = buildPopup(health, security, transport, nearestDistances, population,base,simulated);
+
+  // Add AI button with a container for result
+  html += `
+    <hr>
+  
+    <b>🧠 AI Area Interpretation:</b>
+    <div class="ai-result" style="margin-top:4px; font-style:italic; color:#555;">
+      <button class="ai-trigger-btn" style="
+        border:none;
+        background:#0d6efd;
+        color:white;
+        padding:4px 8px;
+        border-radius:6px;
+        cursor:pointer;
+      ">
+        Ask AI about this area
+      </button>
+    </div>
+  `;
+
+  return html;
+}
+
+function highlightPOIs(pois) {
+  highlightLayer.clearLayers();
+
+  pois.forEach(poi => {
+    const highlightMarker = L.circleMarker(poi.latlng, {
+      radius: 6,
+      color: '#ff0000',
+      weight: 2,
+      fillColor: '#ff0000',
+      fillOpacity: 0.3
+    });
+    highlightLayer.addLayer(highlightMarker);
+  });
+
+  // Auto-remove after 6 seconds
+  setTimeout(() => {
+    highlightLayer.clearLayers();
+  }, 6000);
+}
+
+
+
+
+//////////////////////////////////////////////////////// osm/////////////////////////////
+
+///////////// osmsearch////////
+const osmSearchContainer = L.DomUtil.create('div', 'osm-search-container');
+
+osmSearchContainer.innerHTML = `
+  <div id="osm-search-box" style="display:none; width: 200px;">
+    <input
+      id="osm-search-input"
+      type="text"
+      class="form-control form-control-sm"
+      placeholder="Search place OSM(Tunisia)"
+      autocomplete="off"
+    >
+    <div id="osm-results" class="list-group mt-1"></div>
+  </div>
+`;
+
+const osmSearchControl = L.control({ position: 'topleft' });
+osmSearchControl.onAdd = function () {
+  // Prevent clicks on search container from propagating to map
+  L.DomEvent.disableClickPropagation(osmSearchContainer);
+  L.DomEvent.disableScrollPropagation(osmSearchContainer);
+  return osmSearchContainer;
+};
+osmSearchControl.addTo(map);
+
+const searchBox = document.getElementById('osm-search-box');
+const osmInput = document.getElementById('osm-search-input');
+const osmResults = document.getElementById('osm-results');
+
+// EasyButton for search
+const searchButton = L.easyButton('fa-magnifying-glass', function(btn, map) {
+  btn.button.style.display = 'none'; // hide button
+  searchBox.style.display = 'block'; // show search box
+  osmInput.focus();
+}, 'Search place').setPosition("topleft").addTo(map);
+
+// Collapse search box and show button
+function collapseSearch() {
+  searchBox.style.display = 'none';
+  osmResults.innerHTML = '';
+  searchButton.button.style.display = 'block';
+}
+
+// Collapse when clicking on map
+map.on('click', collapseSearch);
+
+let osmMarker = null;
+let osmMarkerTimeout = null;
+let osmSearchTimer = null;
+
+// Search logic
+osmInput.addEventListener('input', function () {
+  const query = this.value.trim();
+  osmResults.innerHTML = '';
+
+  if (query.length < 3) return;
+
+  clearTimeout(osmSearchTimer);
+
+  osmSearchTimer = setTimeout(() => {
+    const url =
+      `https://nominatim.openstreetmap.org/search?` +
+      `format=json&countrycodes=tn&addressdetails=1&limit=5&q=${encodeURIComponent(query)}`;
+
+    fetch(url, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'UrbanAnalysisGIS/1.0' }
+    })
+    .then(res => res.json())
+    .then(data => {
+      osmResults.innerHTML = '';
+      if (!data.length) return;
+
+      data.forEach(place => {
+        const item = document.createElement('button');
+        item.className = 'list-group-item list-group-item-action';
+        item.style.fontSize = '12px';
+        item.innerHTML = `<strong>${place.name || place.display_name.split(',')[0]}</strong><br>
+                          <small class="text-muted">${place.display_name}</small>`;
+        item.onclick = () => zoomToOSMPlace(place);
+        osmResults.appendChild(item);
+      });
+    });
+  }, 300);
+});
+
+function zoomToOSMPlace(place) {
+  const lat = parseFloat(place.lat);
+  const lon = parseFloat(place.lon);
+
+  if (osmMarker) map.removeLayer(osmMarker);
+  if (osmMarkerTimeout) clearTimeout(osmMarkerTimeout);
+
+  osmMarker = L.marker([lat, lon])
+    .addTo(map)
+    .bindPopup(`<b>${place.display_name}</b>`)
+    .openPopup();
+
+  map.setView([lat, lon], 15);
+
+  osmMarkerTimeout = setTimeout(() => {
+    if (osmMarker) map.removeLayer(osmMarker);
+    osmMarker = null;
+  }, 5000);
+
+  collapseSearch();
+}
+
+
+///////////////////////////////// heat//////////////////////////////////////
+let heatmapLayer = null;
+
+const heatmapControl = L.control({ position: 'bottomright' });
+
+heatmapControl.onAdd = function () {
+  const div = L.DomUtil.create('div', 'heatmap-control');
+  div.innerHTML = `
+    <label><b>Heatmap category</b></label>
+    <select id="heatmapSelect" class="form-select form-select-sm">
+      <option value="">-- None --</option>
+    <option value="Hôpital">🏥 Hospital</option>
+    <option value="Clinique">🏨 Clinic</option>   
+    <option value="Station metro">🚇 Metro </option>
+    <option value="Gare">🚆 Train </option>
+    </select>
+  `;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+
+heatmapControl.addTo(map);
+////////////////////////////////
+
+document.getElementById('heatmapSelect').addEventListener('change', function () {
+  const category = this.value;
+
+  // remove old heatmap if exists
+  if (heatmapLayer) {
+    map.removeLayer(heatmapLayer);
+    heatmapLayer = null;
+  }
+
+  if (!category) return; // None selected
+
+  // get latlngs of POIs in this category
+  const points = allPOIs
+    .filter(poi => poi.properties.Valeur_POI === category)
+    .map(poi => [poi.latlng.lat, poi.latlng.lng, 15]); // last value = intensity
+
+  if (points.length === 0) return;
+
+  heatmapLayer = L.heatLayer(points, {
+  radius: map.getZoom() * 2 + 10, // increases radius when zooming out
+  blur: 20,
+  maxZoom: 17,
+  gradient: {
+    0.2: '#2a9d8f',
+    0.4: '#f4a261',
+    0.6: '#e76f51',
+    0.8: '#e63946',
+    1.0: '#d62828'
+  }
+}).addTo(map);
+
+});
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// NEAREST /////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Layer for nearest analysis (separate from highlightLayer)
+const nearestLayer = L.layerGroup().addTo(map);
+
+// Style per domain
+const nearestStyles = {
+  health: { color: '#e63946' },
+  security: { color: '#457b9d' },
+  transport: { color: '#2a9d8f' }
+};
+
+const nearestServices = [
+  // Health
+  { value: "Hôpital", category: "health", label: "Hospital" },
+  { value: "Clinique", category: "health", label: "Clinic" },
+
+  // Security
+  { value: "Police", category: "security", label: "Police" },
+  { value: "Protection civile", category: "security", label: "Fire station" },
+  { value: "Garde nationale", category: "security", label: "Gendarmerie" },
+
+  // Transport
+  { value: "Gare", category: "transport", label: "Train station" },
+  { value: "Station metro", category: "transport", label: "Metro station" }
+];
+const valeurPOIColors = {
+  "Police": "#1f77b4",          // blue
+  "Garde nationale": "#ff7f0e",  // orange
+  "Protection civile": "#2ca02c",// green
+  "Douane": "#d62728",           // red
+  "Station taxi": "#9467bd",     // purple
+  "Station bus": "#8c564b",      // brown
+  "Station metro": "#e377c2",    // pink
+  "Station louage": "#7f7f7f",   // gray
+  "Gare": "#bcbd22",             // olive
+  "Pharmacie": "#17becf",        // cyan
+  "Cabinet médical": "#aec7e8",  // light blue
+  "Centre médical": "#ffbb78",
+  "Dispensaire": "#98df8a",
+  "Laboratoire d’analyses": "#ff9896",
+  "Imagerie médicale": "#c5b0d5",
+  "Clinique": "#c49c94",
+  "Hôpital": "#f7b6d2"
+};
+
+
+function runNearestAnalysis(clickLatLng) {
+  nearestLayer.clearLayers();
+
+  const distances = [];
+
+  nearestServices.forEach(service => {
+    let nearest = null;
+    let minDistance = Infinity;
+
+    [...allPOIs, ...simulatedPOIs].forEach(poi => {
+      if (poi.category !== service.category) return;
+      if (poi.properties.Valeur_POI !== service.value) return;
+
+      const d = map.distance(clickLatLng, poi.latlng);
+      if (d < minDistance) {
+        minDistance = d;
+        nearest = poi;
+      }
+    });
+
+    if (!nearest) return;
+
+    const style = nearestStyles[service.category] || { color: '#333' };
+
+    // draw dashed line
+    // L.polyline(
+    //   [clickLatLng, nearest.latlng],
+    //   {
+    //     color: style.color,
+    //     weight: 2,
+    //     opacity: 0.7,
+    //     dashArray: '5,5'
+    //   }
+    // ).addTo(nearestLayer);
+
+    // // highlight nearest POI
+    // L.circleMarker(nearest.latlng, {
+    //   radius: 7,
+    //   color: style.color,
+    //   weight: 2,
+    //   fillOpacity: 0.9
+    // }).addTo(nearestLayer);
+
+ L.polyline(
+  [clickLatLng, nearest.latlng],
+  {
+    color: valeurPOIColors[nearest.properties.Valeur_POI] || '#333',
+    weight: 3,
+    dashArray: '5,5'
+  }
+).addTo(nearestLayer);
+
+// highlight nearest POI
+L.circleMarker(nearest.latlng, {
+  radius: 7,
+  color: valeurPOIColors[nearest.properties.Valeur_POI] || '#333',
+  fillOpacity: 0.9
+}).addTo(nearestLayer);
+
+    distances.push({
+      value: service.value,
+      label: service.label,
+      distance: minDistance,
+      lat: nearest.latlng.lat,   // ✅ add this
+      lng: nearest.latlng.lng    // ✅ add this
+    });
+  });
+
+  // auto clear after 6 seconds
+  // setTimeout(() => nearestLayer.clearLayers(), 6000);
+
+  return distances;
+}
+
+////////////////////////////Population Analysis///////////////////
+
+// ================= POPULATION LAYER =================
+let govLayer = null;
+let govFeatures = [];
+let popMin = Infinity;
+let popMax = -Infinity;
+
+fetch('urban/data/deleg.geojson')
+  .then(res => res.json())
+  .then(data => {
+
+    govLayer = L.geoJSON(data, {
+      style: {
+        color: '#555',
+        weight: 2,
+        fillOpacity: 0
+      }
+    });
+
+    govFeatures = data.features;
+
+    // compute min / max population once
+    govFeatures.forEach(f => {
+      const pop = Number(f.properties.population);
+      if (!isNaN(pop)) {
+        popMin = Math.min(popMin, pop);
+        popMax = Math.max(popMax, pop);
+      }
+    });
+
+    console.log('Population range:', popMin, popMax);
+  });
+///////
+
+// ================= POPULATION ANALYSIS =================
+function analyzePopulation(latlng) {
+  if (!govFeatures.length) return null;
+
+  let foundGov = null;
+
+  govFeatures.forEach(feature => {
+    const layer = L.geoJSON(feature);
+    if (layer.getBounds().contains(latlng)) {
+      foundGov = feature;
+    }
+  });
+
+  if (!foundGov) return null;
+
+  const population = Number(foundGov.properties.population);
+  const name = foundGov.properties.NAME_1 || 'Unknown';
+
+  // normalize population
+  const norm =
+    popMax === popMin
+      ? 0
+      : (population - popMin) / (popMax - popMin);
+
+  // pressure score (inverse logic)
+  const pressureScore = 1 - norm;
+
+  // qualitative label
+  let level = 'LOW 🟢';
+  if (norm > 0.66) level = 'HIGH 🔴';
+  else if (norm > 0.33) level = 'MODERATE 🟠';
+
+  return {
+    governorate: name,
+    population: population,
+    norm,
+    pressureScore,
+    level
+  };
+}
+//////////////////////////////////////////////////////////////
+//////////////////////////////// routing leaflet ////////////////////
+/////////////////////////////////////////////////////////////////////
+
+
+let routingControl = null;
+let lastClickLatLng = null;
+
+function routeToPOI(targetLatLng) {
+  if (!lastClickLatLng) return;
+  if (!L.Routing) {
+    showToast("⚠️ Routing service not available");
+    return;
+  }
+
+  try{
+  // remove existing route
+  if (routingControl) {
+    map.removeControl(routingControl);
+    routingControl = null;
+  }
+
+  routingControl = L.Routing.control({
+    waypoints: [
+      lastClickLatLng,
+      targetLatLng
+    ],
+    addWaypoints: false,
+    draggableWaypoints: false,
+    fitSelectedRoutes: true,
+    show: false,                // 🚫 no itinerary panel
+    routeWhileDragging: false,
+    createMarker: () => null,   // 🚫 no markers
+    lineOptions: {
+      styles: [{
+        color: '#0d6efd',
+        weight: 5,
+        opacity: 0.85
+      }]
+    }
+  }).on('routingerror', function () {
+      showToast("❌ Route not available");
+      if (routingControl) {
+        map.removeControl(routingControl);
+        routingControl = null;
+      }
+    }).addTo(map);
+  } catch (err) {
+    console.error(err);
+    showToast("❌ Route not available");
+  }
+}
+//////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////: AI integration::::::::::::::::::::::::::::::::::::::::::
+/////////////////////////////////////////////////////////////////////////////////////////
+// async function getAIAreaAnalysis(lat, lng) {
+//   const promptText = `
+// You are an urban intelligence assistant.
+// Provide a short, approximate safety assessment for this location:
+// Latitude: ${lat}, Longitude: ${lng}.
+// Do NOT give exact crime rates.
+// Use urban context and nearby services.
+// Return ONE short sentence.
+// `;
+
+async function getAIAreaAnalysis(areaData) {
+
+const promptText = `
+AREA ANALYSIS:
+
+${JSON.stringify(areaData)}
+
+TASK:
+
+Write a short sentence.
+
+Rules:
+- Do not repeat numbers.
+- Do not repeat facility counts.
+- Do not summarize the input.
+- Suggest some priority investments.
+
+Maximum 1 sentences.
+`;
+
+  try {
+  const response = await fetch(
+    "http://localhost:1234/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "qwen2.5-coder-1.5b-instruct",
+        messages: [
+          {
+            role: "system",
+            content: "You are a senior urban planning and geospatial intelligence expert."
+          },
+          {
+            role: "user",
+            content: promptText
+          }
+        ],
+        temperature: 0.4,
+        max_tokens: 150
+      })
+    }
+  );
+    if (response.ok) {
+      const data = await response.json();
+      const textOutput = data?.choices?.[0]?.message?.content?.trim();
+      if (textOutput) return textOutput;
+    }
+
+    console.warn("lm returned bad response");
+  } catch (err) {
+    console.error("lm failed:", err);
+  }
+
+  showToast("AI insight temporarily unavailable");
+  return "AI insight temporarily unavailable";
+}
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////Simulation///////////////////////
+
+// ================== SIMULATION MODE ==================
+let analysisMode = "analysis"; // analysis | simulation
+let simulatedPOIs = [];
+let baselineTotalScore = null;
+L.easyButton({
+  position: 'topleft',
+  states: [{
+    stateName: 'simulation',
+    icon: 'fa-wand-magic-sparkles',
+    title: 'Toggle Simulation Mode',
+    onClick: function(btn, map) {
+      analysisMode = analysisMode === 'analysis' ? 'simulation' : 'analysis';
+      showToast(
+        analysisMode === 'simulation'
+          ? "🧪 Simulation mode ON: click map to add POIs"
+          : "📊 Analysis mode ON"
+      );
+      map.getContainer().style.cursor =
+        analysisMode === 'simulation' ? 'crosshair' : '';
+    }
+  }]
+}).addTo(map);
+
+// ================== SIMULATION POI CONFIG ==================
+const SIM_POI_OPTIONS = [
+  { label: "Hôpital", category: "health" },
+  { label: "Clinique", category: "health" },
+  { label: "Pharmacie", category: "health" },
+  { label: "Cabinet médical", category: "health" },
+  { label: "Centre médical", category: "health" },
+  { label: "Dispensaire", category: "health" },
+  { label: "Laboratoire d’analyses", category: "health" },
+  { label: "Imagerie médicale", category: "health" },
+  { label: "Police", category: "security" },
+  { label: "Douane", category: "security" },
+  { label: "Protection civile", category: "security" },
+  { label: "Garde nationale", category: "security" },
+  { label: "Gare", category: "transport" },
+  { label: "Station metro", category: "transport" },
+  { label: "Station taxi", category: "transport" },
+  { label: "Station bus", category: "transport" },
+  { label: "Station louage", category: "transport" }
+];
+
+
+let simulationSelector = null;
+
+function showSimulationSelector(latlng) {
+  removeSimulationSelector();
+map.setView(latlng, map.getZoom());
+  const container = L.DomUtil.create("div", "simulation-selector");
+  container.style.position = "absolute";
+  container.style.background = "#fff";
+  container.style.padding = "8px";
+  container.style.borderRadius = "6px";
+  container.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+  container.style.zIndex = 1000;
+
+  const select = document.createElement("select");
+  select.style.width = "100%";
+  select.className = "form-select form-select-sm w-100 mt-2"; // classes Bootstrap
+
+  SIM_POI_OPTIONS.forEach((p, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = p.label;
+    select.appendChild(opt);
+  });
+
+  const btn = document.createElement("button");
+  btn.textContent = "Ajouter";
+  btn.style.marginTop = "6px";
+  btn.style.width = "100%";
+  btn.className = "btn btn-sm btn-primary w-100 mt-2";
+
+
+  btn.onclick = () => {
+    const selected = SIM_POI_OPTIONS[select.value];
+    addSimulatedPOI(latlng, selected);
+    removeSimulationSelector();
+  };
+
+  container.appendChild(select);
+  container.appendChild(btn);
+
+  document.body.appendChild(container);
+
+  const point = map.latLngToContainerPoint(latlng);
+  container.style.left = point.x + "px";
+  container.style.top = point.y + "px";
+positionContainer(container, point);
+  simulationSelector = container;
+  L.DomEvent.disableClickPropagation(simulationSelector);
+
+}
+
+
+function removeSimulationSelector() {
+  if (simulationSelector) {
+    simulationSelector.remove();
+    simulationSelector = null;
+  }
+}
+
+function addSimulatedPOI(latlng, poiDef) {
+  const simPOI = {
+    latlng: latlng,
+    category: poiDef.category,
+    properties: {
+      Valeur_POI: poiDef.label
+    },
+    simulated: true
+  };
+
+  simulatedPOIs.push(simPOI);
+
+//  L.circleMarker(latlng, {
+//    radius: 7,
+//    color: "#ff9800",
+//    fillColor: "#ff9800",
+ //   fillOpacity: 0.9
+//  })
+//  .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
+//  .addTo(map);
+L.marker(latlng)
+  .bindPopup(`🧪 POI simulé<br><b>${poiDef.label}</b>`)
+  .addTo(map);
+
+  showToast("POI simulé ajouté");
+}
+
+function positionContainer(container, clickPoint) {
+  const mapSize = map.getSize(); // largeur/hauteur du viewport
+  const containerWidth = container.offsetWidth;
+  const containerHeight = container.offsetHeight;
+
+  let x = clickPoint.x;
+  let y = clickPoint.y;
+
+  // empêcher container de dépasser à droite
+  if (x + containerWidth > mapSize.x) {
+    x = mapSize.x - containerWidth - 10; // 10px marge
+  }
+
+  // empêcher container de dépasser en bas
+  if (y + containerHeight > mapSize.y) {
+    y = mapSize.y - containerHeight - 10;
+  }
+
+  // appliquer la position
+  container.style.left = x + 'px';
+  container.style.top = y + 'px';
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////elevation///////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
+
+async function getElevationAt(lat, lng) {
+    const bboxSize = 0.005; // adjust for accuracy
+
+    const url = `
+      http://localhost:8081/geoserver/wms?
+      service=WMS&version=1.1.1&request=GetFeatureInfo&
+      layers=SRTM:output_SRTMGL1&
+      query_layers=SRTM:output_SRTMGL1&
+      info_format=application/json&
+      width=256&height=256&
+      srs=EPSG:4326&
+      bbox=${lng-bboxSize},${lat-bboxSize},${lng+bboxSize},${lat+bboxSize}&
+      x=128&y=128
+    `.replace(/\s+/g, '');
+
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (!json.features || json.features.length === 0) return null;
+    return json.features[0].properties.GRAY_INDEX;
+}
+
+
+
+async function getSlopeAt(lat, lng) {
+    const bboxSize = 0.005;
+
+    const url = `
+      http://localhost:8081/geoserver/wms?
+      service=WMS&version=1.1.1&request=GetFeatureInfo&
+      layers=SRTM:slope&
+      query_layers=SRTM:slope&
+      info_format=application/json&
+      width=256&height=256&
+      srs=EPSG:4326&
+      bbox=${lng-bboxSize},${lat-bboxSize},${lng+bboxSize},${lat+bboxSize}&
+      x=128&y=128
+    `.replace(/\s+/g, '');
+
+    const res = await fetch(url);
+    const json = await res.json();
+
+    if (!json.features || json.features.length === 0) return null;
+
+    return parseFloat(json.features[0].properties.GRAY_INDEX.toFixed(2));
+}
+
+
+function interpretSlope(slope) {
+
+    if (slope < 5) {
+        return "🟢 Flat";
+    }
+
+    if (slope < 15) {
+        return "🟡 Gentle";
+    }
+
+    if (slope < 30) {
+        return "🟠 Moderate";
+    }
+
+    return "🔴 Steep";
+}
+
+
+
+
+const terrainBadge = L.control({ position: 'topright' });
+
+terrainBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'terrain-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = '⛰️Terrain Details: –';
+  return div;
+};
+terrainBadge.addTo(map);
+
+
+function updateTerrainBadge(elevation,slope,landcover) {
+const terrainint = terrainIntelligence(elevation, slope, landcover.value)
+  const div = document.querySelector('.terrain-badge');
+  div.innerHTML = `
+    ⛰️Elevation: ${elevation} m<br>
+    📐Slope: ${slope} °<br>
+    Terrain: ${interpretSlope(slope)}<br>
+    LandCover: ${landcover.className}<br>
+    ${terrainint}
+  `;
+
+  
+}
+
+//////////////// land cover //////////////////////
+
+
+// ---- ESA WorldCover v200 (2021) class codes ----
+const ESA_WORLDCOVER_CLASSES = {
+  10: '🌳Tree cover',
+  20: '🌿Shrubland',
+  30: '🌱Grassland',
+  40: '🌾Cropland',
+  50: '🏙️Built-up',
+  60: '🌵Bare / sparse vegetation',
+  70: '❄️Snow and ice',
+  80: '🌊Permanent water bodies',
+  90: '💧Herbaceous wetland',
+  95: '🌿Mangroves',
+  100: 'Moss and lichen',
+  0: 'No data',
+};
+ 
+
+async function getLandCoverAtPoint(lat, lon, config) {
+  const { geoserverUrl, layerName, version = '1.1.1' } = config;
+ 
+  // A tiny bbox centered on the point. Size doesn't need to match pixel
+  // resolution exactly — we just need (lon,lat) to fall inside pixel (0,0)
+  // of a 2x2 "image", and we query that exact pixel.
+  const delta = 0.0005; // ~50m at the equator; shrink if you need finer precision
+  const minLon = lon - delta, maxLon = lon + delta;
+  const minLat = lat - delta, maxLat = lat + delta;
+ 
+  const params = new URLSearchParams({
+    SERVICE: 'WMS',
+    VERSION: version,
+    REQUEST: 'GetFeatureInfo',
+    LAYERS: layerName,
+    QUERY_LAYERS: layerName,
+    WIDTH: '2',
+    HEIGHT: '2',
+    INFO_FORMAT: 'application/json',
+    FEATURE_COUNT: '1',
+  });
+ 
+  if (version === '1.3.0') {
+    // 1.3.0 + EPSG:4326 uses lat,lon axis order, and I/J instead of X/Y
+    params.set('CRS', 'EPSG:4326');
+    params.set('BBOX', `${minLat},${minLon},${maxLat},${maxLon}`);
+    params.set('I', '1');
+    params.set('J', '1');
+  } else {
+    // 1.1.1 always uses lon,lat order, and X/Y
+    params.set('SRS', 'EPSG:4326');
+    params.set('BBOX', `${minLon},${minLat},${maxLon},${maxLat}`);
+    params.set('X', '1');
+    params.set('Y', '1');
+  }
+ 
+  const res = await fetch(`${geoserverUrl}?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error(`GeoServer request failed: ${res.status} ${res.statusText}`);
+  }
+  const data = await res.json();
+ 
+  const feature = data?.features?.[0];
+  if (!feature) {
+    return { value: null, className: 'No data / outside layer extent', raw: data };
+  }
+ 
+  // Pixel value property name varies by store config — try the common ones,
+  // otherwise fall back to the first numeric property found.
+  const props = feature.properties || {};
+  const knownKeys = ['GRAY_INDEX', 'PALETTE_INDEX', 'value', 'band_1', 'VALUE'];
+  let value = knownKeys.map((k) => props[k]).find((v) => v !== undefined);
+ 
+  if (value === undefined) {
+    const numericEntry = Object.entries(props).find(([, v]) => typeof v === 'number');
+    value = numericEntry ? numericEntry[1] : undefined;
+  }
+ 
+  return {
+    value: value ?? null,
+    className: value !== undefined ? (ESA_WORLDCOVER_CLASSES[value] ?? `Unknown class (${value})`) : 'Unknown',
+    raw: data,
+  };
+}
+ ////////////////////////////////////// analyze terrain/////////////////////////
+ /////////////////////////////////////////////////////////////////
+
+
+ function terrainIntelligence(elevation, slope, landcoverCode) {
+
+    const alerts = [];
+
+    // ===============================
+    // LAND COVER NAMES
+    // ===============================
+
+    const lc = Number(landcoverCode);
+
+    const landcoverNames = {
+        10: "Tree Cover",
+        20: "Shrubland",
+        30: "Grassland",
+        40: "Cropland",
+        50: "Built-up",
+        60: "Bare Soil",
+        70: "Snow/Ice",
+        80: "Water",
+        90: "Wetland",
+        95: "Mangroves",
+        100: "Moss/Lichen"
+    };
+
+    const landcover = landcoverNames[lc] || "Unknown";
+
+    // ===============================
+    // SLOPE ANALYSIS
+    // ===============================
+
+    // if (slope < 5) {
+    //     alerts.push("🟢 Flat Terrain");
+    // }
+
+    // if (slope >= 5 && slope < 15) {
+    //     alerts.push("🟡 Gently Sloping Terrain");
+    // }
+
+    // if (slope >= 15 && slope < 30) {
+    //     alerts.push("🟠 Hilly Terrain");
+    // }
+
+    // if (slope >= 30) {
+    //     alerts.push("🔴 Steep Terrain");
+    // }
+
+    // // ===============================
+    // // ELEVATION ANALYSIS
+    // // ===============================
+
+    // if (elevation < 100) {
+    //     alerts.push("🌊 Lowland Area");
+    // }
+
+    // if (elevation >= 500 && elevation < 1000) {
+    //     alerts.push("⛰️ Highland Area");
+    // }
+
+    // if (elevation >= 1000) {
+    //     alerts.push("🏔️ Mountainous Terrain");
+    // }
+
+    // // ===============================
+    // // LAND COVER ANALYSIS
+    // // ===============================
+
+    // switch (lc) {
+
+    //     case 10:
+    //         alerts.push("🌳 Dense Vegetation");
+    //         break;
+
+    //     case 20:
+    //         alerts.push("🌿 Shrub Vegetation");
+    //         break;
+
+    //     case 30:
+    //         alerts.push("🌱 Natural Grassland");
+    //         break;
+
+    //     case 40:
+    //         alerts.push("🌾 Agricultural Area");
+    //         break;
+
+    //     case 50:
+    //         alerts.push("🏙️ Urbanized Area");
+    //         break;
+
+    //     case 60:
+    //         alerts.push("🏜️ Bare Ground");
+    //         break;
+
+    //     case 80:
+    //         alerts.push("💧 Water Body");
+    //         break;
+
+    //     case 90:
+    //         alerts.push("🦆 Wetland Ecosystem");
+    //         break;
+    // }
+
+    // ===============================
+    // COMBINED INTELLIGENCE RULES
+    // ===============================
+
+    // Landslide
+
+    if (
+        slope > 25 &&
+        [40, 60].includes(lc)
+    ) {
+        alerts.push("⚠️ Potential Landslide Area");
+    }
+
+    // Erosion
+
+    if (
+        slope > 15 &&
+        lc === 60
+    ) {
+        alerts.push("⚠️ Soil Erosion Risk");
+    }
+
+    // Flood
+
+    if (
+        elevation < 50 &&
+        [50, 80, 90].includes(lc)
+    ) {
+        alerts.push("⚠️ Flood Susceptible Area");
+    }
+
+    // Difficult access
+
+    if (
+        elevation > 800 &&
+        slope > 20
+    ) {
+        alerts.push("⚠️ Difficult Accessibility");
+    }
+
+    // Stable terrain
+
+    if (
+        slope < 10 &&
+        [10, 20, 30].includes(lc)
+    ) {
+        alerts.push("✅ Stable Terrain");
+    }
+
+    // Urban expansion candidate
+
+    if (
+        slope < 10 &&
+        lc === 40
+    ) {
+        alerts.push("🏗️ Potential Urban Expansion Zone");
+    }
+
+    // Ecological sensitivity
+
+    if (
+        [80, 90, 95].includes(lc)
+    ) {
+        alerts.push("🌿 Environmentally Sensitive Area");
+    }
+
+    // Mountain vegetation
+
+    if (
+        elevation > 800 &&
+        lc === 10
+    ) {
+        alerts.push("🌲 Mountain Forest Zone");
+    }
+
+    return alerts
+    ;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////// GENERIC SERVICE GAP ANALYSIS CONTROL ////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+const GAP_ANALYSIS_LAYERS = [
+  { value: "Hôpital", label: "Hospitals", icon: "🏥", category: "health" },
+  { value: "Clinique", label: "Clinics", icon: "🏨", category: "health" },
+  { value: "Pharmacie", label: "Pharmacies", icon: "💊", category: "health" },
+  { value: "Cabinet médical", label: "Medical Offices", icon: "🩺", category: "health" },
+  { value: "Centre médical", label: "Medical Centers", icon: "🩺", category: "health" },
+  { value: "Dispensaire", label: "Dispensaries", icon: "🩺", category: "health" },
+  { value: "Laboratoire d’analyses", label: "Laboratories", icon: "🧪", category: "health" },
+  { value: "Imagerie médicale", label: "Imaging Centers", icon: "🩻", category: "health" },
+  { value: "Police", label: "Police Stations", icon: "👮", category: "security" },
+  { value: "Garde nationale", label: "Garde Nationale", icon: "🪖", category: "security" },
+  { value: "Protection civile", label: "Protection Civile", icon: "🚒", category: "security" },
+  { value: "Douane", label: "Douane", icon: "🛃", category: "security" },
+  { value: "Station taxi", label: "Taxi Stations", icon: "🚕", category: "transport" },
+  { value: "Station bus", label: "Bus Stations", icon: "🚌", category: "transport" },
+  { value: "Station metro", label: "Metro Stations", icon: "🚇", category: "transport" },
+  { value: "Station louage", label: "Louage Stations", icon: "🚐", category: "transport" },
+  { value: "Gare", label: "Train Stations", icon: "🚆", category: "transport" }
+];
+
+const gapToggleBtn = L.easyButton(
+  'fa-magnifying-glass-location',
+  function () {
+    const ctrl = document.getElementById('hospitalGapControl');
+    const isVisible = ctrl.style.display !== 'none';
+
+    ctrl.style.display = isVisible ? 'none' : 'block';
+
+    if (isVisible) {
+      document.getElementById('toggleGap').checked = false;
+      desertLayer.clearLayers();
+      document.getElementById('gapStats').innerHTML = '';
+    }
+  },
+  'Service Gap Analysis'
+);
+
+gapToggleBtn.addTo(map);
+map.on('click', () => {
+  document.getElementById('hospitalGapControl').style.display = 'none';
+});
+
+
+const HospitalGapAnalysis = L.Control.extend({
+  options: { position: 'topleft' },
+  onAdd: function (map) {
+    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+    container.id = 'hospitalGapControl';
+
+    container.style.backgroundColor = 'white';
+    container.style.padding = '10px';
+    container.style.width = '220px';
+    container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+    container.style.borderRadius = '5px';
+    container.style.fontFamily = 'Inter, sans-serif';
+
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.disableScrollPropagation(container);
+
+    const optionsHTML = GAP_ANALYSIS_LAYERS.map((layer, i) =>
+      `<option value="${i}">${layer.icon} ${layer.label}</option>`
+    ).join('');
+
+    container.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px;">
+        <i class="fas fa-magnifying-glass-location"></i> Service Gap Finder
+      </div>
+
+      <div style="font-size: 11px; margin-bottom: 4px;">Layer</div>
+      <select id="gapLayerSelect" class="form-select form-select-sm" style="margin-bottom: 10px;">
+        ${optionsHTML}
+      </select>
+
+      <div style="font-size: 11px; margin-bottom: 5px;">
+        Radius: <span id="radiusVal" style="font-weight:bold; color:#d62828;">15</span> km
+      </div>
+      <input id="gapRadiusRange" type="range" min="5" max="50" step="5" value="15" 
+             style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+      
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; border-top: 1px solid #eee; padding-top: 8px;">
+        <input type="checkbox" id="toggleGap" style="cursor:pointer;">
+        <label for="toggleGap" style="cursor:pointer; margin:0;">Show High-Risk Zones</label>
+      </div>
+      <div id="gapStats" style="margin-top: 8px; font-size: 10px; color: #666; line-height: 1.2;"></div>
+
+      <div id="gapLoader" style="
+        display:none;
+        margin-top:8px;
+        font-size:11px;
+        color:#555;
+        text-align:center;
+      ">
+        <i class="fas fa-spinner fa-spin"></i><br>
+        Analyzing coverage...
+      </div>
+    `;
+    return container;
+  }
+});
+
+const hospitalGapControl = new HospitalGapAnalysis();
+map.addControl(hospitalGapControl);
+document.getElementById('hospitalGapControl').style.display = 'none';
+
+let desertLayer = L.layerGroup().addTo(map);
+
+function showGapLoader(show) {
+  document.getElementById('gapLoader').style.display = show ? 'block' : 'none';
+  document.getElementById('toggleGap').disabled = show;
+  document.getElementById('gapRadiusRange').disabled = show;
+  document.getElementById('gapLayerSelect').disabled = show;
+}
+
+async function runGapAnalysis() {
+  desertLayer.clearLayers();
+
+  const isEnabled = document.getElementById('toggleGap').checked;
+  const radiusKm = parseInt(document.getElementById('gapRadiusRange').value);
+  const layerIndex = parseInt(document.getElementById('gapLayerSelect').value);
+  const selectedLayer = GAP_ANALYSIS_LAYERS[layerIndex];
+  const statsDiv = document.getElementById('gapStats');
+
+  if (!isEnabled) {
+    statsDiv.innerHTML = "";
+    return;
+  }
+
+  showGapLoader(true);
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  if (allPOIs.length === 0 || govFeatures.length === 0) {
+    showToast("⚠️ Data is still loading, please wait...");
+    document.getElementById('toggleGap').checked = false;
+    showGapLoader(false);
+    return;
+  }
+
+  // 1. Filter facilities for the chosen layer
+  const facilities = [...allPOIs, ...simulatedPOIs]
+    .filter(poi => poi.properties.Valeur_POI === selectedLayer.value)
+    .map(poi => turf.point([poi.latlng.lng, poi.latlng.lat]));
+
+  if (facilities.length === 0) {
+    showToast(`No ${selectedLayer.label} found in data.`);
+    showGapLoader(false);
+    return;
+  }
+
+  // 2. Build Served Area
+  const facilityCollection = turf.featureCollection(facilities);
+  const buffered = turf.buffer(facilityCollection, radiusKm, { units: 'kilometers' });
+  let servedArea = buffered.features[0];
+
+  for (let i = 1; i < buffered.features.length; i++) {
+    servedArea = turf.union(servedArea, buffered.features[i]);
+    statsDiv.innerHTML = `Merging ${i + 1} / ${buffered.features.length} ${selectedLayer.label.toLowerCase()} buffers...`;
+  }
+
+  let totalAtRisk = 0;
+  let desertCount = 0;
+
+  // 3. Process Delegations
+  govFeatures.forEach((gov, i) => {
+    try {
+      const diff = turf.difference(
+        turf.cleanCoords(gov),
+        turf.cleanCoords(servedArea)
+      );
+      statsDiv.innerHTML = `Analyzing zone ${i + 1} / ${govFeatures.length}...`;
+
+      if (diff && diff.geometry && diff.geometry.coordinates.length > 0) {
+        const pop = Number(gov.properties.population) || 0;
+        totalAtRisk += pop;
+        desertCount++;
+
+        L.geoJSON(diff, {
+          style: {
+            color: '#d62828',
+            fillColor: '#e63946',
+            weight: 1.5,
+            fillOpacity: 0.4,
+            dashArray: '4, 4'
+          }
+        })
+        .bindPopup(`<b>${selectedLayer.icon} ${selectedLayer.label} Desert</b><br>Pop: ${pop.toLocaleString()}`)
+        .addTo(desertLayer);
+      }
+    } catch (err) {
+      console.error("Spatial error:", err);
+    }
+  });
+
+  statsDiv.innerHTML = `
+    <b>${selectedLayer.icon} ${selectedLayer.label} Gap:</b><br>
+    ${desertCount} underserved zone(s)<br>
+    ~${totalAtRisk.toLocaleString()} people at risk.
+  `;
+  showGapLoader(false);
+  map.flyTo([35.04, 9.56], 7);
+}
+
+// Global delegated listeners
+document.addEventListener('input', function (e) {
+  if (e.target && e.target.id === 'gapRadiusRange') {
+    document.getElementById('radiusVal').innerText = e.target.value;
+    if (document.getElementById('toggleGap').checked) runGapAnalysis();
+  }
+});
+
+document.addEventListener('change', function (e) {
+  if (e.target && (e.target.id === 'toggleGap' || e.target.id === 'gapLayerSelect')) {
+    if (e.target.id === 'gapLayerSelect' && !document.getElementById('toggleGap').checked) return;
+    runGapAnalysis();
+  }
+});
+
+//////////////////////////////////////
+/////////////////////////// env intelligence ///////////////
+///////////////////////////////////////
+
+async function getEnvironmentalData(lat, lon) {
+
+    function getAQILabel(aqi) {
+        if (aqi <= 20) return "Excellent";
+        if (aqi <= 40) return "Good";
+        if (aqi <= 60) return "Moderate";
+        if (aqi <= 80) return "Poor";
+        return "Very Poor";
+    }
+
+    function getTemperatureLabel(temp) {
+        if (temp < 10) return "Cold";
+        if (temp < 20) return "Mild";
+        if (temp < 30) return "Warm";
+        if (temp < 38) return "Hot";
+        return "Extreme Heat";
+    }
+
+    function getHumidityLabel(humidity) {
+        if (humidity < 30) return "Dry";
+        if (humidity < 60) return "Comfortable";
+        if (humidity < 80) return "Humid";
+        return "Very Humid";
+    }
+
+    function getWindLabel(speed) {
+        if (speed < 10) return "Calm";
+        if (speed < 25) return "Moderate";
+        if (speed < 40) return "Windy";
+        return "Strong Wind";
+    }
+
+    try {
+
+        const weatherUrl =
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
+
+        const airUrl =
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm10,pm2_5,nitrogen_dioxide,ozone`;
+
+        const [weatherResponse, airResponse] = await Promise.all([
+            fetch(weatherUrl),
+            fetch(airUrl)
+        ]);
+
+        if (!weatherResponse.ok || !airResponse.ok) {
+            throw new Error("Failed to fetch environmental data");
+        }
+
+        const weather = await weatherResponse.json();
+        const air = await airResponse.json();
+
+        const temperature = weather.current.temperature_2m;
+        const humidity = weather.current.relative_humidity_2m;
+        const windSpeed = weather.current.wind_speed_10m;
+
+        const aqi = air.current.european_aqi;
+        const pm25 = air.current.pm2_5;
+        const pm10 = air.current.pm10;
+        const no2 = air.current.nitrogen_dioxide;
+        const ozone = air.current.ozone;
+
+        return {
+
+            weather: {
+                temperature,
+                humidity,
+                windSpeed,
+
+                temperatureLabel: getTemperatureLabel(temperature),
+                humidityLabel: getHumidityLabel(humidity),
+                windLabel: getWindLabel(windSpeed)
+            },
+
+            airQuality: {
+                aqi,
+                pm25,
+                pm10,
+                no2,
+                ozone,
+
+                aqiLabel: getAQILabel(aqi)
+            },
+
+            summary: {
+                thermalCondition: getTemperatureLabel(temperature),
+                airQualityStatus: getAQILabel(aqi),
+                atmosphericComfort: getHumidityLabel(humidity),
+                windCondition: getWindLabel(windSpeed)
+            }
+        };
+
+    } catch (error) {
+
+        console.error("Environmental Intelligence Error:", error);
+
+        return {
+            error: true,
+            message: "Environmental data unavailable"
+        };
+    }
+}
+
+
+
+function buildEnvironmentalBadge(data) {
+
+  if (!data) {
+    return "🌿 Environment: No data";
+  }
+
+  // ---------- AQI ----------
+  let aqiLabel = data.airQuality.aqiLabel;
+  let aqiIcon = "⚪";
+
+  switch (data.airQuality.aqi) {
+    case 1:
+      aqiLabel = "Good";
+      aqiIcon = "🟢";
+      break;
+
+    case 2:
+      aqiLabel = "Fair";
+      aqiIcon = "🟡";
+      break;
+
+    case 3:
+      aqiLabel = "Moderate";
+      aqiIcon = "🟠";
+      break;
+
+    case 4:
+      aqiLabel = "Poor";
+      aqiIcon = "🔴";
+      break;
+
+    case 5:
+      aqiLabel = "Very Poor";
+      aqiIcon = "🟣";
+      break;
+  }
+
+  // ---------- Weather ----------
+  const temp = data.weather.temperature;
+  const wind = data.weather.windSpeed;
+
+  let weatherLabel = "Stable";
+
+  if (temp > 38) {
+    weatherLabel = "Very Hot";
+  } else if (temp > 30) {
+    weatherLabel = "Warm";
+  } else if (temp < 10) {
+    weatherLabel = "Cold";
+  }
+
+  return `
+🌿 Environmental Intelligence<br>
+${aqiIcon} Air Quality: ${aqiLabel}<br>
+🌡️ Temperature: ${temp} °C (${weatherLabel})<br>
+💨 Wind: ${wind} km/h (${data.weather.windLabel})<br>
+
+`;
+}
+const envBadge = L.control({ position: 'topright' });
+
+envBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'env-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = '🌿 Environmental: –';
+  return div;
+};
+envBadge.addTo(map);
+
+
+function updateEnvBadge(env) {
+document.querySelector('.env-badge').innerHTML =
+    buildEnvironmentalBadge(env);
+ 
+}
+
+
+  </script>
+</body>
+</html>
