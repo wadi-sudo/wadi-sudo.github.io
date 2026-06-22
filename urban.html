@@ -961,7 +961,7 @@ let highlightLayer = L.layerGroup().addTo(map);
 
 //   // highlightPOIs([...health.usedPOIs, ...security.usedPOIs, ...transport.usedPOIs]);
 // });
-map.on("click", function(e) {
+map.on("click", async function(e) {
   lastClickLatLng = e.latlng;
 
 
@@ -1057,6 +1057,9 @@ if (wrapper) {
       }
     });
   }, 50); // slight delay to ensure DOM exists
+	const env = await getEnvironmentalData(e.latlng.lat,e.latlng.lng);
+
+updateEnvBadge(env)
 });
 
 function buildPopupWithAIButton(health, security, transport, nearestDistances, population,base,simulated) {
@@ -1992,6 +1995,203 @@ document.addEventListener('change', function (e) {
   }
 });
 
+//////////////////////////////////////
+/////////////////////////// env intelligence ///////////////
+///////////////////////////////////////
+
+async function getEnvironmentalData(lat, lon) {
+
+    function getAQILabel(aqi) {
+        if (aqi <= 20) return "Excellent";
+        if (aqi <= 40) return "Good";
+        if (aqi <= 60) return "Moderate";
+        if (aqi <= 80) return "Poor";
+        return "Very Poor";
+    }
+
+    function getTemperatureLabel(temp) {
+        if (temp < 10) return "Cold";
+        if (temp < 20) return "Mild";
+        if (temp < 30) return "Warm";
+        if (temp < 38) return "Hot";
+        return "Extreme Heat";
+    }
+
+    function getHumidityLabel(humidity) {
+        if (humidity < 30) return "Dry";
+        if (humidity < 60) return "Comfortable";
+        if (humidity < 80) return "Humid";
+        return "Very Humid";
+    }
+
+    function getWindLabel(speed) {
+        if (speed < 10) return "Calm";
+        if (speed < 25) return "Moderate";
+        if (speed < 40) return "Windy";
+        return "Strong Wind";
+    }
+
+    try {
+
+        const weatherUrl =
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
+
+        const airUrl =
+            `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=european_aqi,pm10,pm2_5,nitrogen_dioxide,ozone`;
+
+        const [weatherResponse, airResponse] = await Promise.all([
+            fetch(weatherUrl),
+            fetch(airUrl)
+        ]);
+
+        if (!weatherResponse.ok || !airResponse.ok) {
+            throw new Error("Failed to fetch environmental data");
+        }
+
+        const weather = await weatherResponse.json();
+        const air = await airResponse.json();
+
+        const temperature = weather.current.temperature_2m;
+        const humidity = weather.current.relative_humidity_2m;
+        const windSpeed = weather.current.wind_speed_10m;
+
+        const aqi = air.current.european_aqi;
+        const pm25 = air.current.pm2_5;
+        const pm10 = air.current.pm10;
+        const no2 = air.current.nitrogen_dioxide;
+        const ozone = air.current.ozone;
+
+        return {
+
+            weather: {
+                temperature,
+                humidity,
+                windSpeed,
+
+                temperatureLabel: getTemperatureLabel(temperature),
+                humidityLabel: getHumidityLabel(humidity),
+                windLabel: getWindLabel(windSpeed)
+            },
+
+            airQuality: {
+                aqi,
+                pm25,
+                pm10,
+                no2,
+                ozone,
+
+                aqiLabel: getAQILabel(aqi)
+            },
+
+            summary: {
+                thermalCondition: getTemperatureLabel(temperature),
+                airQualityStatus: getAQILabel(aqi),
+                atmosphericComfort: getHumidityLabel(humidity),
+                windCondition: getWindLabel(windSpeed)
+            }
+        };
+
+    } catch (error) {
+
+        console.error("Environmental Intelligence Error:", error);
+
+        return {
+            error: true,
+            message: "Environmental data unavailable"
+        };
+    }
+}
+
+
+
+function buildEnvironmentalBadge(data) {
+
+  if (!data) {
+    return "🌿 Environment: No data";
+  }
+
+  // ---------- AQI ----------
+  let aqiLabel = data.airQuality.aqiLabel;
+  let aqiIcon = "⚪";
+
+  switch (data.airQuality.aqi) {
+    case 1:
+      aqiLabel = "Good";
+      aqiIcon = "🟢";
+      break;
+
+    case 2:
+      aqiLabel = "Fair";
+      aqiIcon = "🟡";
+      break;
+
+    case 3:
+      aqiLabel = "Moderate";
+      aqiIcon = "🟠";
+      break;
+
+    case 4:
+      aqiLabel = "Poor";
+      aqiIcon = "🔴";
+      break;
+
+    case 5:
+      aqiLabel = "Very Poor";
+      aqiIcon = "🟣";
+      break;
+  }
+
+  // ---------- Weather ----------
+  const temp = data.weather.temperature;
+  const wind = data.weather.windSpeed;
+
+  let weatherLabel = "Stable";
+
+  if (temp > 38) {
+    weatherLabel = "Very Hot";
+  } else if (temp > 30) {
+    weatherLabel = "Warm";
+  } else if (temp < 10) {
+    weatherLabel = "Cold";
+  }
+
+  return `
+🌿 Environmental Intelligence<br>
+${aqiIcon} Air Quality: ${aqiLabel}<br>
+🌡️ Temperature: ${temp} °C (${weatherLabel})<br>
+💨 Wind: ${wind} km/h (${data.weather.windLabel})<br>
+
+`;
+}
+const envBadge = L.control({ position: 'topright' });
+
+envBadge.onAdd = function () {
+  const div = L.DomUtil.create('div', 'env-badge');
+  div.style.cssText = `
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: Inter,sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+  `;
+  div.innerHTML = '🌿 Environmental: –';
+  return div;
+};
+envBadge.addTo(map);
+
+
+function updateEnvBadge(env) {
+document.querySelector('.env-badge').innerHTML =
+    buildEnvironmentalBadge(env);
+ 
+}
+
+
+	  
+	  
   </script>
 </body>
 </html>
