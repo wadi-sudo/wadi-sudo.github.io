@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#17130f">
 <meta name="description" content="Explore satellite-derived land surface temperature, vegetation, and urban growth across Tunisia.">
 <meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
 <title>Earth Lab Tunisia | Urban heat and growth</title>
 <script>
 /* ===== EDIT HERE: your Earth Engine settings (this is the only place, no config.js needed) ===== */
@@ -36,6 +37,16 @@ body:before{content:"";position:fixed;inset:0;z-index:600;pointer-events:none;ba
 #swipeUI input{flex:1}#swline{position:fixed;z-index:650;top:0;bottom:0;width:3px;margin-left:-1px;background:#fff;box-shadow:0 0 14px #000a;pointer-events:none}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--panel);color:var(--tx);border:1px solid var(--line)}.hotspot-analyze{margin-top:6px;background:var(--acc);color:#24170e;border:0;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
 @media(max-width:680px){#swipeUI{bottom:calc(58dvh + 10px)}}
+#loader{position:fixed;z-index:1300;top:calc(max(14px,env(safe-area-inset-top)) + 70px);right:16px;display:flex;align-items:center;gap:10px;max-width:min(340px,calc(100% - 32px));padding:10px 15px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);font-size:12px;overflow:hidden}
+#loader i{flex:none;width:16px;height:16px;border-radius:50%;border:2.5px solid #f3a35c44;border-top-color:var(--acc);animation:spin .8s linear infinite}#loader:after{content:"";position:absolute;left:0;bottom:0;height:2px;width:40%;background:var(--acc);animation:slide 1.4s ease-in-out infinite}
+#loader.slow{border-color:#f3a35c88}#loader.slow i{border-top-color:#ff6b4e}@keyframes spin{to{transform:rotate(360deg)}}@keyframes slide{0%{left:-40%}100%{left:100%}}
+@media(max-width:680px){#loader{top:calc(max(8px,env(safe-area-inset-top)) + 100px);right:8px}}
+@media(max-width:680px){.leaflet-control-scale{display:none}
+.leaflet-control-attribution{font-size:0!important;width:28px;height:28px;padding:0!important;margin:0 10px 8px 0!important;border-radius:50%;background:var(--panel)!important;color:var(--tx)!important;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;cursor:pointer;box-shadow:var(--shadow)}
+.leaflet-control-attribution:before{content:"ⓘ";font-size:16px;line-height:1}
+.leaflet-control-attribution.open{font-size:10px!important;width:auto;height:auto;max-width:calc(100vw - 20px);padding:5px 9px!important;border-radius:10px;display:block;text-align:right}
+.leaflet-control-attribution.open:before{display:none}.leaflet-control-attribution a{color:var(--acc)!important}
+body:has(#sheet.min) .leaflet-bottom{margin-bottom:76px}body:has(#sheet.min) .maphint{bottom:84px}body:has(#sheet.min) #swipeUI{bottom:84px}}
 </style>
 </head>
 <body>
@@ -56,7 +67,7 @@ body:before{content:"";position:fixed;inset:0;z-index:600;pointer-events:none;ba
   </ol>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="toolbtn" onclick="preview()">Open NASA preview (no sign-in)</button><button class="toolbtn" onclick="$('#setup').style.display='none'">Close</button></div>
 </div></div>
-<div id="swipeUI" hidden><b id="swL"></b><input type="range" id="swipe" min="5" max="95" value="50" aria-label="Swipe divider"><b id="swR"></b></div><div id="swline" hidden></div><div id="toast" role="status" aria-live="polite"></div><div class="maphint">Tap map to analyze a location</div>
+<div id="loader" hidden role="status" aria-live="polite"><i></i><span id="ldt">Loading satellite data…</span></div><div id="swipeUI" hidden><b id="swL"></b><input type="range" id="swipe" min="5" max="95" value="50" aria-label="Swipe divider"><b id="swR"></b></div><div id="swline" hidden></div><div id="toast" role="status" aria-live="polite"></div><div class="maphint">Tap map to analyze a location</div>
 <script type="text/plain" id="app">
 const $=s=>document.querySelector(s);
 const nz=o=>Object.fromEntries(Object.entries(o||{}).filter(([k,v])=>v!==''&&v!=null));
@@ -70,7 +81,10 @@ function diag(){
 const LOG=[];const log=m=>{LOG.push(new Date().toTimeString().slice(0,8)+'  '+m);console.log('[EarthLab]',m)};
 log('origin '+location.origin);log('clientId '+(C.clientId?C.clientId.slice(0,14)+'...':'MISSING')+', project '+(C.project||'MISSING'));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),4500)};
-const st=(txt,cls='')=>{$('#ptx').textContent=txt;$('#pill').className=cls};
+const LD={n:0,s:false,t:0,iv:null};
+function upd(){const on=LD.n>0||LD.s,el=$('#loader');if(on&&!LD.iv){LD.t=Date.now();LD.iv=setInterval(()=>{const s=Math.round((Date.now()-LD.t)/1000);$('#ldt').textContent=s<8?'Loading satellite data…':s<25?'Still working · '+s+'s':'Slow connection · '+s+'s. Earth Engine is still computing, please keep waiting or retry.';el.classList.toggle('slow',s>=8);el.hidden=s<2},500)}if(!on&&LD.iv){clearInterval(LD.iv);LD.iv=null;el.hidden=true;el.classList.remove('slow')}}
+function wrapEE(){const w=(p,n)=>{const o=p&&p[n];if(!o)return;p[n]=function(...a){const i=a.findIndex(x=>typeof x==='function');if(i<0)return o.apply(this,a);LD.n++;upd();let d=false;const fin=()=>{if(!d){d=true;LD.n=Math.max(0,LD.n-1);upd()}},f=a[i],to=setTimeout(fin,120000);a[i]=function(...r){clearTimeout(to);fin();return f.apply(this,r)};return o.apply(this,a)}};w(ee.ComputedObject.prototype,'evaluate');w(ee.Image.prototype,'getMap');w(ee.Image.prototype,'getThumbURL')}
+const st=(txt,cls='')=>{LD.s=cls==='busy';upd();$('#ptx').textContent=txt;$('#pill').className=cls};
 const PAL={heat:['#313695','#74add1','#ffffbf','#f46d43','#a50026'],veg:['#8c510a','#dfc27d','#f6e8c3','#80cdc1','#01665e','#003c30']};
 const CITIES={Tunis:[36.8065,10.1815],Ariana:[36.8665,10.1647],'Ben Arous':[36.7531,10.2189],Manouba:[36.8101,10.0863],Bizerte:[37.2744,9.8739],Nabeul:[36.4513,10.7357],Zaghouan:[36.4029,10.1429],'Béja':[36.7256,9.1817],Jendouba:[36.5011,8.7802],'Le Kef':[36.174,8.7049],Siliana:[36.085,9.3708],Sousse:[35.8256,10.6369],Monastir:[35.7643,10.8113],Mahdia:[35.5047,11.0622],Kairouan:[35.6781,10.0963],Kasserine:[35.1676,8.8365],'Sidi Bouzid':[35.0382,9.4849],Sfax:[34.7406,10.7603],Gafsa:[34.425,8.7842],'Gabès':[33.8815,10.0982],Djerba:[33.8076,10.8451],'Médenine':[33.3549,10.5055],Tataouine:[32.9297,10.4518],'Kébili':[33.7044,8.969],Tozeur:[33.9197,8.1335]};
 let EE=false, ovl=null, mk=null, goEE=null, T0=null;let hotspotLayer=null,yearTimer=null,yearPlaying=false,visualReq=0,scanReq=0;
@@ -83,7 +97,7 @@ const bt=document.getElementById('boot');if(bt)bt.remove();
 const base={Satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19}),
  OpenStreetMap:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map),
  Topography:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19})};
-base.Dark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19});map.removeLayer(base.OpenStreetMap);base.Dark.addTo(map);L.control.scale({position:'bottomleft',imperial:false}).addTo(map);L.control.layers(base,null,{position:'bottomright'}).addTo(map);
+map.removeLayer(base.OpenStreetMap);base.Satellite.addTo(map);L.control.scale({position:'bottomleft',imperial:false}).addTo(map);L.control.layers(base,null,{position:'bottomright'}).addTo(map);
 $('#chips').innerHTML=Object.keys(CITIES).map(n=>`<button data-c="${n}">${n}</button>`).join('');
 $('#chips').onclick=e=>{const name=e.target.dataset.c,c=CITIES[name];if(c){map.flyTo(c,12);toast('Analyzing '+name+'…');setTimeout(()=>analyze({lat:c[0],lng:c[1]}),900)}};
 
@@ -181,7 +195,7 @@ $('#scanHotspots').onclick=()=>{
  if(!EE){toast('Connect Earth Engine before scanning for hotspots.');return}
  const b=map.getBounds(),west=Math.max(7.4,b.getWest()),east=Math.min(11.8,b.getEast()),south=Math.max(30.1,b.getSouth()),north=Math.min(37.6,b.getNorth());
  if(west>=east||south>=north){toast('Pan or zoom to Tunisia before scanning.');return}
- stopYearPlayback();if(hotspotLayer)hotspotLayer.clearLayers();else hotspotLayer=L.layerGroup().addTo(map);
+ stopYearPlayback();if(hotspotLayer)hotspotLayer.clearLayers();else hotspotLayer=L.featureGroup().addTo(map);
  const req=++scanReq,year=+$('#yr').value,[m0,m1]=season();st('Scanning satellite pixels…','busy');setInsight('Earth Intelligence · scanning','Sampling clear Landsat surface-temperature pixels in the visible Tunisia map.');toast('Scanning the visible area. Larger views can take a few seconds.');
  try{const region=ee.Geometry.Rectangle([west,south,east,north],null,false);
  const samples=comp(year,m0,m1).select('LST').sample({region:region,scale:5000,numPixels:160,seed:37,geometries:true,tileScale:2,dropNulls:true});
@@ -233,6 +247,7 @@ $('#rank').onclick=()=>{if(!EE)return toast('Connect Earth Engine to rank cities
 $('#out').addEventListener('click',e=>{const r=e.target.closest('.rk');if(r)goCity(r.dataset.c)});
 $('#png').onclick=()=>{if(!EE)return toast('Connect Earth Engine to export.');const[img,vis]=layerImage(),b=map.getBounds();toast('Preparing PNG of the visible area…');
   img.getThumbURL(Object.assign({region:ee.Geometry.Rectangle([b.getWest(),b.getSouth(),b.getEast(),b.getNorth()]),dimensions:1400,format:'png'},vis),(u,e)=>{if(e||!u)return toast('Export failed: '+(e&&e.message||e));const a=document.createElement('a');a.href=u;a.target='_blank';a.rel='noopener';a.click()})};
+map.attributionControl.getContainer().addEventListener('click',e=>{if(e.target.tagName!=='A')e.currentTarget.classList.toggle('open')});
 /* ---------- auth + library loading ---------- */
 const setup=why=>{if(why)$('#why').textContent=why;$('#setup').style.display='flex';st('Not connected')};
 function preview(){
@@ -241,7 +256,7 @@ function preview(){
   toast('Preview: NASA MODIS land surface temperature. Connect Earth Engine for the full analysis.');
 }
 const fail=m=>{log('FAIL '+m);st('Not connected');setup(String(m)+'\n\n'+diag())};
-function boot(){log('Earth Engine initialized');EE=true;st('Earth Engine connected','ok');show()}
+function boot(){log('Earth Engine initialized');try{wrapEE()}catch(e){log('loader hook failed: '+e)}EE=true;st('Earth Engine connected','ok');show()}
 function initEE(){
   const go=goEE=()=>ee.initialize(null,null,boot,e=>fail('Earth Engine could not start: '+e),null,C.project);
   if(C.tokenEndpoint){ // optional: token proxy so visitors need no Google account
@@ -267,8 +282,8 @@ const LIBS=C.eeLib?[C.eeLib]:['https://cdn.jsdelivr.net/npm/@google/earthengine@
 (function(){
   const fl=document.createElement('link');fl.rel='stylesheet';fl.href='https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=DM+Sans:wght@400;500&display=swap';document.head.appendChild(fl);
   const showErr=m=>{const b=document.getElementById('err');b.style.display='block';b.textContent=m};
-  window.addEventListener('error',e=>showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
-  window.addEventListener('unhandledrejection',e=>showErr('Error: '+(e.reason&&e.reason.message||e.reason)));
+  window.addEventListener('error',e=>e.message==='Script error.'?console.warn('Cross-origin script error (details in console)'):showErr('Error: '+e.message+' ('+String(e.filename||'').split('/').pop()+':'+e.lineno+')'));
+  window.addEventListener('unhandledrejection',e=>/Receiving end does not exist|Extension context/.test(String(e.reason&&e.reason.message||e.reason))?0:showErr('Error: '+(e.reason&&e.reason.message||e.reason)));
   const CDN=['https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/','https://unpkg.com/leaflet@1.9.4/dist/','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/'];
   const run=()=>{const s=document.createElement('script');s.textContent=document.getElementById('app').textContent;document.body.appendChild(s)};
   (function go(i){
