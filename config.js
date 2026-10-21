@@ -1,7 +1,7 @@
 // Earth Lab Tunisia: configuration. Keep this file next to index.html.
 window.GEE_CONFIG = {
   // OAuth "Web application" Client ID, e.g. "1234567890-abc123.apps.googleusercontent.com"
-  clientId: "",
+  clientId: "13962050498-1nat1l2g0j9eenm6m695pge3pr00ctua.apps.googleusercontent.com",
 
   // Google Cloud Project ID that is registered for Earth Engine, e.g. "my-earth-lab-123456"
   project: "noted-point-414222",
