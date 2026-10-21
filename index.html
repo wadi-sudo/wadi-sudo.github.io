@@ -82,6 +82,7 @@ const LOG=[];const log=m=>{LOG.push(new Date().toTimeString().slice(0,8)+'  '+m)
 log('origin '+location.origin);log('clientId '+(C.clientId?C.clientId.slice(0,14)+'...':'MISSING')+', project '+(C.project||'MISSING'));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),4500)};
 const LD={n:0,s:false,t:0,iv:null};
+window.addEventListener('error',e=>{if(LD.s||LD.n){LD.s=false;LD.n=0;upd();st('Earth Engine error','');toast('Earth Engine error: '+(e.message&&e.message!=='Script error.'?e.message:'see the status pill for details'));log('ERROR '+e.message)}});
 function upd(){const on=LD.n>0||LD.s,el=$('#loader');if(on&&!LD.iv){LD.t=Date.now();LD.iv=setInterval(()=>{const s=Math.round((Date.now()-LD.t)/1000);$('#ldt').textContent=s<8?'Loading satellite data…':s<25?'Still working · '+s+'s':'Slow connection · '+s+'s. Earth Engine is still computing, please keep waiting or retry.';el.classList.toggle('slow',s>=8);el.hidden=s<2},500)}if(!on&&LD.iv){clearInterval(LD.iv);LD.iv=null;el.hidden=true;el.classList.remove('slow')}}
 function wrapEE(){const w=(p,n)=>{const o=p&&p[n];if(!o)return;p[n]=function(...a){const i=a.findIndex(x=>typeof x==='function');if(i<0)return o.apply(this,a);LD.n++;upd();let d=false;const fin=()=>{if(!d){d=true;LD.n=Math.max(0,LD.n-1);upd()}},f=a[i],to=setTimeout(fin,120000);a[i]=function(...r){clearTimeout(to);fin();return f.apply(this,r)};return o.apply(this,a)}};w(ee.ComputedObject.prototype,'evaluate');w(ee.Image.prototype,'getMap');w(ee.Image.prototype,'getThumbURL')}
 const st=(txt,cls='')=>{LD.s=cls==='busy';upd();$('#ptx').textContent=txt;$('#pill').className=cls};
@@ -106,7 +107,7 @@ const TUN=()=>ee.Geometry.Rectangle([7.4,30.1,11.8,37.6]);
 const season=()=>$('#season').value.split('-').map(Number);
 // Landsat 8/9 Collection 2 Level 2: cloud-masked median of surface temperature (°C) and NDVI
 function comp(y,m0,m1){
-  const prep=i=>{
+  const prep=function(i){
     const ok=i.select('QA_PIXEL').bitwiseAnd(30).eq(0);
     const lst=i.select('ST_B10').multiply(0.00341802).add(149).subtract(273.15).rename('LST');
     const sr=i.select(['SR_B3','SR_B4','SR_B5','SR_B6']).multiply(2.75e-5).add(-0.2),nd=sr.normalizedDifference(['SR_B5','SR_B4']).rename('NDVI').addBands(sr.normalizedDifference(['SR_B3','SR_B5']).rename('NDWI')).addBands(sr.normalizedDifference(['SR_B6','SR_B5']).rename('NDBI'));
@@ -157,7 +158,7 @@ function analyze(ll){
   if(!EE){toast('Connect Earth Engine to analyze');return}
   const out=$('#out');out.innerHTML=`<small>Computing 12 years of Landsat around ${ll.lat.toFixed(3)}, ${ll.lng.toFixed(3)}… this takes a few seconds.</small>`;
   const aoi=ee.Geometry.Point([ll.lng,ll.lat]).buffer(R*1000),[m0,m1]=season(),y2=Math.max(2017,+$('#yr').value);
-  const ser=ee.FeatureCollection(ee.List.sequence(2014,2025).map(y=>ee.Feature(null,comp(y,m0,m1).reduceRegion({reducer:ee.Reducer.mean(),geometry:aoi,scale:120,maxPixels:1e9,bestEffort:true}).set('y',y))));
+  const ser=ee.FeatureCollection(ee.List.sequence(2014,2025).map(function(y){return ee.Feature(null,comp(y,m0,m1).reduceRegion({reducer:ee.Reducer.mean(),geometry:aoi,scale:120,maxPixels:1e9,bestEffort:true}).set('y',y))}));
   const area=y=>built(y).multiply(ee.Image.pixelArea()).reduceRegion({reducer:ee.Reducer.sum(),geometry:aoi,scale:30,maxPixels:1e9,bestEffort:true}).get('b');
   const stamp=T0=Date.now();
   ee.Dictionary({a:area(2016),b:area(y2)}).evaluate((d,e)=>{
