@@ -5,7 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <title>Earth Lab Tunisia | Urban heat and growth</title>
-<script src="config.js"></script>
+<script>
+/* Optional: you can also put your settings right here instead of config.js. Non-empty values here are used if config.js is missing. */
+window.GEE_INLINE={clientId:"",project:""};
+document.write('<script src="config.js?'+Date.now()+'"><\/script>');
+</script>
 <style>/* Leaflet 1.9.4 (BSD-2-Clause, (c) Vladimir Agafonkin), inlined so no CDN can block the page */
 /* required styles */
 
@@ -27,7 +31,3 @@
 	overflow: hidden;
 	}
 .leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow {
-	-webkit-user-select: none;
-	   -moz-user-select: none;
