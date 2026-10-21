@@ -4,7 +4,7 @@ window.GEE_CONFIG = {
   clientId: "",
 
   // Google Cloud Project ID that is registered for Earth Engine, e.g. "my-earth-lab-123456"
-  project: "",
+  project: "noted-point-414222",
 
   // Optional: URL of a token service (lets visitors use the app without their own Earth Engine access)
   tokenEndpoint: "",
