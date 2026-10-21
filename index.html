@@ -5,29 +5,194 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#17130f">
 <title>Earth Lab Tunisia | Urban heat and growth</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=DM+Sans:wght@400;500&display=swap">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="config.js"></script>
+<style>
+:root{--card:rgba(28,22,17,.92);--tx:#f3ece1;--mut:#a69a89;--acc:#ff7a45;--sage:#8fbf9f;--line:rgba(255,255,255,.13);--inp:rgba(255,255,255,.07)}
+*{box-sizing:border-box}html,body,#map{height:100%;height:100dvh;margin:0}
+body{font:14px/1.45 'DM Sans',sans-serif;color:var(--tx);background:#17130f;overflow:hidden}
+.disp,h2{font-family:Fraunces,serif;font-weight:800}
+.card{background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+#bar{position:fixed;z-index:1000;top:max(10px,env(safe-area-inset-top));left:10px;right:10px;display:flex;align-items:center;gap:10px;padding:8px 12px}
+#bar em{color:var(--acc)}#pill{margin-left:auto;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+#pill i{width:8px;height:8px;border-radius:50%;background:var(--mut)}#pill.ok i{background:#58d68d}#pill.busy i{background:var(--acc);animation:p 1s infinite}
+@keyframes p{50%{opacity:.2}}
+button,select,input{font:inherit;color:var(--tx)}
+button{background:var(--acc);color:#1b0e07;border:0;border-radius:9px;padding:7px 12px;cursor:pointer;font-weight:500}
+select{width:100%;background:var(--inp);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-top:4px}select option{color:#111}
+input[type=range]{width:100%;accent-color:var(--acc);margin:4px 0}
+label{display:block;color:var(--mut);font-size:12px;margin-top:8px}label b{color:var(--tx)}
+#sheet{position:fixed;z-index:1000;top:70px;left:10px;width:330px;max-height:calc(100dvh - 82px);overflow:auto;padding:12px 14px}
+#grip{display:none}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px}#chips button{background:var(--inp);color:var(--tx);border:1px solid var(--line);white-space:nowrap;border-radius:99px}
+#legend{margin:8px 0;font-size:12px;color:var(--mut)}#legend i{display:block;height:8px;border-radius:4px;margin-bottom:3px}
+#out{border-top:1px solid var(--line);padding-top:8px;margin-top:6px}#out svg{width:100%;display:block}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.kpi div{background:var(--inp);border-radius:10px;padding:8px}
+.kpi b{display:block;font:800 20px Fraunces,serif}.kpi small,small{color:var(--mut)}
+#setup{position:fixed;inset:0;z-index:3000;background:rgba(10,8,6,.88);display:none;align-items:center;justify-content:center;padding:14px}
+#setup .card{max-width:560px;max-height:92dvh;overflow:auto;padding:18px}#setup li{margin:5px 0}#setup code{background:var(--inp);padding:1px 5px;border-radius:5px;word-break:break-all}
+#toast{position:fixed;z-index:4000;left:50%;bottom:22px;transform:translate(-50%,40px);background:#000c;padding:9px 16px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(max-width:640px){
+ #sheet{top:auto;left:0;right:0;bottom:0;width:100%;max-height:46dvh;border-radius:18px 18px 0 0;padding:8px 14px calc(14px + env(safe-area-inset-bottom));transition:max-height .25s}
+ #sheet.min{max-height:64px;overflow:hidden}.leaflet-control-zoom{display:none}
+ #grip{display:block;width:46px;height:5px;border-radius:3px;background:var(--mut);margin:0 auto 6px;opacity:.6;cursor:pointer;padding:6px 0;background-clip:content-box}
+ select{font-size:16px}.leaflet-bottom{margin-bottom:46dvh}#sheet.min~.x{}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<header id="bar" class="card"><b class="disp">Earth Lab <em>Tunisia</em></b><button id="signin" hidden>Sign in with Google</button><span id="pill"><i></i><span id="ptx">Not connected</span></span></header>
+<section id="sheet" class="card">
+  <div id="grip" onclick="$('#sheet').classList.toggle('min')"></div>
+  <label>Layer<select id="layer">
+    <option value="lst">Land surface temperature (°C)</option>
+    <option value="ndvi">Vegetation index (NDVI)</option>
+    <option value="built">Built-up area</option>
+    <option value="growth">Urban growth since 2016</option></select></label>
+  <label>Year <b id="yv">2024</b><input type="range" id="yr" min="2014" max="2025" value="2024"></label>
+  <div class="two"><label>Season<select id="season"><option value="6-8">Summer (Jun to Aug)</option><option value="3-5">Spring</option><option value="9-11">Autumn</option><option value="1-12">Whole year</option></select></label>
+  <label>Analysis radius<select id="rad"><option value="1">1 km</option><option value="3" selected>3 km</option><option value="5">5 km</option></select></label></div>
+  <label>Opacity<input type="range" id="op" min="20" max="100" value="75"></label>
+  <div id="chips"></div><div id="legend"></div>
+  <div id="out"><small>Tap the map to measure heat trend, greenness and urban growth around that spot.</small></div>
+</section>
+<div id="setup"><div class="card">
+  <h2 style="margin:0 0 6px">Connect Google Earth Engine</h2>
+  <p id="why" style="color:var(--mut);margin:0 0 8px">Earth Engine needs a one-time setup. No paid API key is required, only an OAuth Client ID.</p>
+  <ol>
+   <li>Open <code>console.cloud.google.com</code>, create a project, and note its <b>Project ID</b>.</li>
+   <li>Register that project for Earth Engine at <code>code.earthengine.google.com/register</code> (choose Noncommercial).</li>
+   <li>APIs &amp; Services, Library: enable <b>Earth Engine API</b>.</li>
+   <li>OAuth consent screen: type External, add your email as a test user.</li>
+   <li>Credentials, Create credentials, <b>OAuth client ID</b>, type <b>Web application</b>. Under Authorized JavaScript origins add <code>https://YOURNAME.github.io</code> and <code>http://localhost:8000</code>.</li>
+   <li>Copy the Client ID and Project ID into <code>config.js</code> next to this file, then reload.</li>
+  </ol>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="preview()">Open NASA preview (no sign-in)</button><button style="background:var(--inp);color:var(--tx)" onclick="$('#setup').style.display='none'">Close</button></div>
+</div></div>
+<div id="toast"></div>
 <script>
-/* Optional: you can also put your settings right here instead of config.js. Non-empty values here are used if config.js is missing. */
-window.GEE_INLINE={clientId:"",project:""};
-document.write('<script src="config.js?'+Date.now()+'"><\/script>');
-</script>
-<style>/* Leaflet 1.9.4 (BSD-2-Clause, (c) Vladimir Agafonkin), inlined so no CDN can block the page */
-/* required styles */
+const C=window.GEE_CONFIG||{}, $=s=>document.querySelector(s);
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),4500)};
+const st=(txt,cls='')=>{$('#ptx').textContent=txt;$('#pill').className=cls};
+const PAL={heat:['#313695','#74add1','#ffffbf','#f46d43','#a50026'],veg:['#8c510a','#dfc27d','#f6e8c3','#80cdc1','#01665e','#003c30']};
+const CITIES={Tunis:[36.8065,10.1815],Sfax:[34.7406,10.7603],Sousse:[35.8256,10.6369],Bizerte:[37.2744,9.8739],Gabès:[33.8815,10.0982],Kairouan:[35.6781,10.0963],Nabeul:[36.4513,10.7357],Tozeur:[33.9197,8.1335]};
+let EE=false, ovl=null, mk=null, goEE=null, T0=null;
 
-.leaflet-pane,
-.leaflet-tile,
-.leaflet-marker-icon,
-.leaflet-marker-shadow,
-.leaflet-tile-container,
-.leaflet-pane > svg,
-.leaflet-pane > canvas,
-.leaflet-zoom-box,
-.leaflet-image-layer,
-.leaflet-layer {
-	position: absolute;
-	left: 0;
-	top: 0;
-	}
-.leaflet-container {
-	overflow: hidden;
-	}
-.leaflet-tile,
+/* ---------- map ---------- */
+const s0=C.start||{lat:36.8,lng:10.18,zoom:10};
+const map=L.map('map',{center:[s0.lat,s0.lng],zoom:s0.zoom,zoomControl:false});
+L.control.zoom({position:'bottomright'}).addTo(map);
+const base={Satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19}).addTo(map),
+ OpenStreetMap:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}),
+ Topography:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19})};
+L.control.layers(base,null,{position:'bottomright'}).addTo(map);
+$('#chips').innerHTML=Object.keys(CITIES).map(n=>`<button data-c="${n}">${n}</button>`).join('');
+$('#chips').onclick=e=>{const c=CITIES[e.target.dataset.c];if(c){map.flyTo(c,12);setTimeout(()=>analyze({lat:c[0],lng:c[1]}),900)}};
+
+/* ---------- Earth Engine logic ---------- */
+const TUN=()=>ee.Geometry.Rectangle([7.4,30.1,11.8,37.6]);
+const season=()=>$('#season').value.split('-').map(Number);
+// Landsat 8/9 Collection 2 Level 2: cloud-masked median of surface temperature (°C) and NDVI
+function comp(y,m0,m1){
+  const prep=i=>{
+    const ok=i.select('QA_PIXEL').bitwiseAnd(24).eq(0);
+    const lst=i.select('ST_B10').multiply(0.00341802).add(149).subtract(273.15).rename('LST');
+    const nd=i.select(['SR_B5','SR_B4']).multiply(2.75e-5).add(-0.2).normalizedDifference(['SR_B5','SR_B4']).rename('NDVI');
+    return lst.addBands(nd).updateMask(ok)};
+  const d=ee.Date.fromYMD(y,1,1);
+  return ee.ImageCollection('LANDSAT/LC08/C02/T1_L2').merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2'))
+    .filterDate(d,d.advance(1,'year')).filter(ee.Filter.calendarRange(m0,m1,'month')).filterBounds(TUN()).map(prep).median();
+}
+// Dynamic World: most frequent label of the year, class 6 = built
+function built(y){
+  return ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1').filterDate(ee.Date.fromYMD(y,1,1),ee.Date.fromYMD(y,12,31)).filterBounds(TUN()).select('label').mode().eq(6).rename('b');
+}
+function layerImage(){
+  const [m0,m1]=season(),y=+$('#yr').value,k=$('#layer').value,sum=$('#season').value==='6-8';
+  if(k==='lst')return[comp(y,m0,m1).select('LST'),{min:sum?25:12,max:sum?50:45,palette:PAL.heat},`${sum?'25':'12'} °C|${sum?'50':'45'} °C`,PAL.heat];
+  if(k==='ndvi')return[comp(y,m0,m1).select('NDVI'),{min:0,max:.7,palette:PAL.veg},'0 bare|0.7 dense',PAL.veg];
+  if(k==='built')return[built(y).selfMask(),{palette:['#ff7a45']},'Built-up in '+y,['#ff7a45','#ff7a45']];
+  return[built(y).and(built(2016).not()).selfMask(),{palette:['#ffd23f']},`New built-up 2016 to ${y}`,['#ffd23f','#ffd23f']];
+}
+let deb;function show(){
+  clearTimeout(deb);deb=setTimeout(()=>{
+    if(!EE)return;const[img,vis,lab,pal]=layerImage();st('Rendering…','busy');
+    img.getMap(vis,(m,err)=>{
+      if(err||!m){st('Earth Engine error','');return toast('Earth Engine: '+(err||'no map'))}
+      const url=m.urlFormat||`https://earthengine.googleapis.com/map/${m.mapid}/{z}/{x}/{y}?token=${m.token}`;
+      if(ovl)map.removeLayer(ovl);ovl=L.tileLayer(url,{opacity:$('#op').value/100,maxZoom:18}).addTo(map);st('Earth Engine connected','ok');
+      const[a,b]=lab.split('|');$('#legend').innerHTML=`<i style="background:linear-gradient(90deg,${pal.join(',')})"></i>${b?`<span style="float:right">${b}</span>${a}`:a}`;
+    });},300);
+}
+const lin=p=>{const n=p.length,mx=p.reduce((a,q)=>a+q[0],0)/n,my=p.reduce((a,q)=>a+q[1],0)/n;let sxy=0,sxx=0;p.forEach(q=>{sxy+=(q[0]-mx)*(q[1]-my);sxx+=(q[0]-mx)**2});const m=sxy/sxx;return{m,b:my-m*mx}};
+function spark(p,col){
+  if(p.length<3)return'<small>Not enough clear-sky data here.</small>';
+  const xs=p.map(a=>a[0]),ys=p.map(a=>a[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  const X=x=>8+(x-x0)/(x1-x0)*264,Y=v=>62-(v-y0)/((y1-y0)||1)*52,{m,b}=lin(p);
+  return`<svg viewBox="0 0 280 70"><polyline fill="none" stroke="${col}" stroke-width="2" points="${p.map(a=>X(a[0])+','+Y(a[1])).join(' ')}"/>
+  <line x1="${X(x0)}" y1="${Y(m*x0+b)}" x2="${X(x1)}" y2="${Y(m*x1+b)}" stroke="${col}" stroke-dasharray="4 3" opacity=".7"/>${p.map(a=>`<circle cx="${X(a[0])}" cy="${Y(a[1])}" r="2.5" fill="${col}"/>`).join('')}</svg>`;
+}
+function analyze(ll){
+  if(mk)map.removeLayer(mk);const R=+$('#rad').value;
+  mk=L.circle(ll,{radius:R*1000,color:'#ff7a45',weight:2,fillOpacity:.08}).addTo(map);
+  if(!EE){toast('Connect Earth Engine to analyze');return}
+  const out=$('#out');out.innerHTML=`<small>Computing 12 years of Landsat around ${ll.lat.toFixed(3)}, ${ll.lng.toFixed(3)}… this takes a few seconds.</small>`;
+  const aoi=ee.Geometry.Point([ll.lng,ll.lat]).buffer(R*1000),[m0,m1]=season(),y2=Math.max(2017,+$('#yr').value);
+  const ser=ee.FeatureCollection(ee.List.sequence(2014,2025).map(y=>ee.Feature(null,comp(y,m0,m1).reduceRegion({reducer:ee.Reducer.mean(),geometry:aoi,scale:120,maxPixels:1e9,bestEffort:true}).set('y',y))));
+  const area=y=>built(y).multiply(ee.Image.pixelArea()).reduceRegion({reducer:ee.Reducer.sum(),geometry:aoi,scale:30,maxPixels:1e9,bestEffort:true}).get('b');
+  const stamp=T0=Date.now();
+  ee.Dictionary({a:area(2016),b:area(y2)}).evaluate((d,e)=>{
+    if(stamp!==T0||e||!d)return;const a=d.a/1e6,b=d.b/1e6,g=a?100*(b-a)/a:0;
+    out.dataset.built=`<div class="kpi"><div><small>Built-up 2016</small><b>${a.toFixed(1)} km²</b></div><div><small>Built-up ${y2}</small><b>${b.toFixed(1)} km²</b></div></div><small>Urban footprint grew <b style="color:var(--acc)">${g>=0?'+':''}${g.toFixed(0)}%</b> within ${R} km.</small>`;
+    if(out.dataset.heat)out.innerHTML=out.dataset.heat+out.dataset.built;else out.dataset.bd=1;
+  });
+  ser.evaluate((fc,e)=>{
+    if(stamp!==T0)return;if(e||!fc)return toast('Analysis failed: '+e);
+    const f=fc.features.map(x=>x.properties),pl=f.filter(p=>p.LST!=null).map(p=>[p.y,p.LST]),pn=f.filter(p=>p.NDVI!=null).map(p=>[p.y,p.NDVI]);
+    const tl=pl.length>2?lin(pl).m*10:null,tn=pn.length>2?lin(pn).m*10:null;
+    const html=`<h2 style="margin:0;font-size:17px">Trend 2014 to 2025</h2>
+    <small>Temperature, mean of ${R} km</small>${spark(pl,'#ff7a45')}
+    <small>Vegetation (NDVI)</small>${spark(pn,'#8fbf9f')}
+    <div class="kpi"><div><small>Warming per decade</small><b>${tl==null?'n/a':(tl>=0?'+':'')+tl.toFixed(2)+' °C'}</b></div><div><small>Greenness per decade</small><b>${tn==null?'n/a':(tn>=0?'+':'')+tn.toFixed(3)}</b></div></div>
+    <small>${tl!=null&&tl>.5&&tn!=null&&tn<0?'Warming while vegetation declines: a likely urban heat hotspot.':tl!=null&&tl>.5?'Clear warming trend at this location.':'No strong warming trend at this scale.'}</small>`;
+    out.dataset.heat=html;out.innerHTML=html+(out.dataset.built||'<small><br>Measuring urban growth…</small>');
+  });
+  out.dataset.heat='';out.dataset.built='';
+}
+map.on('click',e=>analyze(e.latlng));
+['layer','yr','season'].forEach(i=>$('#'+i).oninput=()=>{$('#yv').textContent=$('#yr').value;
+  if(['built','growth'].includes($('#layer').value)&&+$('#yr').value<2016)$('#yr').value=2016,$('#yv').textContent=2016;show()});
+$('#op').oninput=()=>ovl&&ovl.setOpacity($('#op').value/100);
+
+/* ---------- auth + library loading ---------- */
+const setup=why=>{if(why)$('#why').textContent=why;$('#setup').style.display='flex';st('Not connected')};
+function preview(){
+  $('#setup').style.display='none';
+  L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_Land_Surface_Temp_Day/default/GoogleMapsCompatible_Level7/{z}/{y}/{x}.png',{opacity:.6,maxNativeZoom:7,attribution:'NASA GIBS'}).addTo(map);
+  toast('Preview: NASA MODIS land surface temperature. Connect Earth Engine for the full analysis.');
+}
+const fail=m=>{st('Not connected');setup(String(m))};
+function boot(){EE=true;st('Earth Engine connected','ok');show()}
+function initEE(){
+  const go=goEE=()=>ee.initialize(null,null,boot,e=>fail('Earth Engine could not start: '+e),null,C.project);
+  if(C.tokenEndpoint){ // optional: token proxy so visitors need no Google account
+    return fetch(C.tokenEndpoint).then(r=>r.json()).then(t=>ee.data.setAuthToken(C.clientId||'','Bearer',t.access_token,t.expires_in||3000,[],go,false)).catch(()=>fail('Token endpoint failed'));
+  }
+  if(!C.clientId||!C.project)return setup('config.js is empty. Fill in clientId and project.');
+  st('Signing in…','busy');
+  ee.data.authenticateViaOauth(C.clientId,go,e=>fail('Sign-in failed: '+e),null,()=>{$('#signin').hidden=false;st('Sign-in required')});
+}
+$('#signin').onclick=()=>ee.data.authenticateViaPopup(()=>{$('#signin').hidden=true;goEE()});
+const LIBS=C.eeLib?[C.eeLib]:['https://cdn.jsdelivr.net/npm/@google/earthengine/build/browser/ee_api_js.js','https://ajax.googleapis.com/ajax/libs/earthengine/0.1.364/earthengine-api.min.js'];
+(function load(i){
+  if(window.ee)return initEE();
+  if(i>=LIBS.length)return fail('Could not load the Earth Engine library. Set eeLib in config.js.');
+  const s=document.createElement('script');s.src=LIBS[i];s.onload=()=>window.ee?initEE():load(i+1);s.onerror=()=>load(i+1);document.head.appendChild(s);
+})(0);
+</script>
+</body>
+</html>
