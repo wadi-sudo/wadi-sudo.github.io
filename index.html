@@ -12,6 +12,9 @@
 <script src="config.js"></script>
 <style>
 :root{--card:rgba(28,22,17,.92);--tx:#f3ece1;--mut:#a69a89;--acc:#ff7a45;--sage:#8fbf9f;--line:rgba(255,255,255,.13);--inp:rgba(255,255,255,.07)}
+.leaflet-container{background:#cfd8dc}
+#boot{position:fixed;inset:0;display:grid;place-items:center;z-index:500;color:#f3ece1;font:600 18px Fraunces,serif,sans-serif}
+#err{position:fixed;z-index:5000;left:8px;right:8px;top:70px;background:#7a1f12;color:#fff;padding:10px 12px;border-radius:10px;font-size:12px;display:none;word-break:break-word}
 *{box-sizing:border-box}html,body,#map{height:100%;height:100dvh;margin:0}
 body{font:14px/1.45 'DM Sans',sans-serif;color:var(--tx);background:#17130f;overflow:hidden}
 .disp,h2{font-family:Fraunces,serif;font-weight:800}
@@ -28,6 +31,3 @@ label{display:block;color:var(--mut);font-size:12px;margin-top:8px}label b{color
 #sheet{position:fixed;z-index:1000;top:70px;left:10px;width:330px;max-height:calc(100dvh - 82px);overflow:auto;padding:12px 14px}
 #grip{display:none}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #chips{display:flex;gap:6px;overflow-x:auto;padding:10px 0 4px}#chips button{background:var(--inp);color:var(--tx);border:1px solid var(--line);white-space:nowrap;border-radius:99px}
-#legend{margin:8px 0;font-size:12px;color:var(--mut)}#legend i{display:block;height:8px;border-radius:4px;margin-bottom:3px}
-#out{border-top:1px solid var(--line);padding-top:8px;margin-top:6px}#out svg{width:100%;display:block}
-.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}.kpi div{background:var(--inp);border-radius:10px;padding:8px}
