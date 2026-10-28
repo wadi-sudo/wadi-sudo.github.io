@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101d29"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Synoptica | Urban Awareness</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500&display=swap">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<style>
+:root{--card:rgba(16,29,41,.9);--line:rgba(255,255,255,.13);--tx:#e8eff3;--mut:#8fa3b1;--acc:#3ec5d6;--good:#58d68d;--mid:#f5b54a;--bad:#ef6a5b;--inp:rgba(255,255,255,.07)}
+body.light{--card:rgba(255,255,255,.93);--line:rgba(0,0,0,.13);--tx:#14232e;--mut:#5b6f7d;--inp:rgba(0,0,0,.06)}
+*{box-sizing:border-box}html,body,#map{height:100%;height:100dvh;margin:0}
+.inv .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.95) contrast(.9)}
+body{font:14px/1.45 'IBM Plex Sans',sans-serif;color:var(--tx);overflow:hidden}
+h1,.num{font-family:'Bricolage Grotesque',sans-serif}
+.card{background:var(--card);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35)}
+#top{position:fixed;z-index:1000;top:max(10px,env(safe-area-inset-top));left:10px;width:min(330px,calc(100vw - 72px));padding:10px 12px}
+#top h1{margin:0 0 8px;font-size:17px;font-weight:800;letter-spacing:.3px;cursor:pointer}
+#top h1 span{color:var(--acc)}
+input,select,button{font:inherit;color:var(--tx)}
+input,select{width:100%;background:var(--inp);border:1px solid var(--line);border-radius:9px;padding:7px 9px;margin-top:6px}
+select option{color:#111}
+#res button{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:6px 2px;cursor:pointer;font-size:12px}
+#dock{position:fixed;z-index:1000;top:max(10px,env(safe-area-inset-top));right:10px;display:flex;flex-direction:column;gap:8px}
+#dock button{width:42px;height:42px;border-radius:12px;font-size:18px;cursor:pointer;padding:0}
+#dock button.on{outline:2px solid var(--acc);background:rgba(62,197,214,.25)}
+#sim{position:fixed;z-index:1000;top:max(10px,env(safe-area-inset-top));right:62px;width:200px;padding:10px;display:none}
+#sim small{color:var(--mut)}
+#stats{position:fixed;z-index:900;left:10px;bottom:34px;padding:8px 12px;font-size:12px;display:none;max-width:280px}
+#stats i{display:block;height:7px;border-radius:4px;margin:6px 0 2px;background:linear-gradient(90deg,hsl(0,70%,50%),hsl(60,70%,50%),hsl(115,70%,50%))}
+#panel{position:fixed;z-index:1000;right:62px;top:max(10px,env(safe-area-inset-top));width:350px;max-height:calc(100vh - 24px);overflow:auto;padding:14px;display:none}
+#panel.on{display:block}
+.hd{display:flex;justify-content:space-between;gap:8px}.hd small,small{color:var(--mut)}
+.x{background:none;border:0;font-size:22px;cursor:pointer;line-height:1}
+.hero{display:grid;grid-template-columns:104px 1fr;gap:6px;align-items:center;margin:8px 0}
+.ring{width:104px}.ring circle{fill:none;stroke-width:9}.ring .bg{stroke:var(--line)}
+.ring .fg{stroke-linecap:round;transform:rotate(-90deg);transform-origin:50%;animation:fill 1.1s cubic-bezier(.2,.8,.2,1)}
+@keyframes fill{from{stroke-dashoffset:276.5}}
+.ring text{font:800 30px 'Bricolage Grotesque';fill:var(--tx)}
+.radar{width:100%;max-width:200px;justify-self:end}.radar .grid{fill:none;stroke:var(--line)}
+.radar .shape{fill:rgba(62,197,214,.3);stroke:var(--acc);stroke-width:2}.radar .pin{fill:none;stroke:var(--mid);stroke-dasharray:4 3;stroke-width:1.5}
+.radar text{font-size:9px;fill:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.chips button,.act button{background:var(--inp);border:1px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer;font-size:12px}
+.chips button.on{background:var(--acc);color:#04222a;border-color:var(--acc);font-weight:500}
+.act{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+details{border-top:1px solid var(--line);padding:7px 0}summary{cursor:pointer;font-weight:500}
+.row{display:grid;grid-template-columns:22px 1fr 54px 26px;gap:6px;align-items:center;font-size:12.5px;margin:5px 0}
+.bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:2px}.bar b{display:block;height:100%}
+.row button{background:var(--acc);border:0;border-radius:6px;cursor:pointer;color:#04222a}
+#ai{white-space:pre-wrap;color:var(--mut);margin-top:6px}
+#toast{position:fixed;z-index:2000;left:50%;bottom:24px;transform:translate(-50%,40px);background:#111c;color:#fff;padding:9px 16px;border-radius:99px;opacity:0;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.sel{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#tg{background:none;border:0;float:right;font-size:18px;cursor:pointer;padding:0 4px;color:var(--tx)}
+#top.min .body{display:none}#top.min h1{margin:0}
+#grab{display:none}
+body.sheet{--sh:214px}body.sheet.full{--sh:68dvh}
+@media(max-width:640px){
+ #top{width:calc(100vw - 68px);left:8px;padding:8px 10px}
+ #dock{right:8px}#dock button{width:46px;height:46px}
+ .leaflet-control-zoom{display:none}
+ body.sheet .leaflet-bottom{margin-bottom:var(--sh)}
+ #panel{right:0;left:0;top:auto;bottom:0;width:100%;height:var(--sh);max-height:none;border-radius:18px 18px 0 0;padding:8px 14px calc(14px + env(safe-area-inset-bottom));transition:height .25s;overscroll-behavior:contain}
+ #grab{display:block;width:46px;height:5px;border-radius:3px;background:var(--mut);margin:0 auto 8px;opacity:.6}
+ .radar{max-width:150px}.x{font-size:30px}
+ .chips{flex-wrap:nowrap;overflow-x:auto}.chips button{white-space:nowrap}
+ .act button,.chips button{padding:9px 13px;font-size:13px}
+ .row{grid-template-columns:22px 1fr 54px 34px}.row button{width:34px;height:30px}
+ input,select{font-size:16px}
+ #sim{top:auto;left:8px;right:64px;width:auto;bottom:calc(var(--sh,0px) + 40px)}
+ #stats{left:8px;bottom:calc(var(--sh,0px) + 40px);max-width:calc(100vw - 80px)}
+ body.sim #stats{bottom:calc(var(--sh,0px) + 170px)}
+}
+@media(prefers-reduced-motion:reduce){.ring .fg{animation:none}}
+/* ---- analysis settings drawer ---- */
+#settings{position:fixed;z-index:1500;top:0;left:0;bottom:0;width:min(390px,100vw);display:flex;flex-direction:column;border-radius:0 16px 16px 0;padding-top:env(safe-area-inset-top);transform:translateX(-105%);visibility:hidden;transition:transform .25s,visibility .25s}
+#settings.on{transform:none;visibility:visible}
+#settings .sbody{flex:1;overflow:auto;padding:4px 14px 14px;overscroll-behavior:contain}
+#settings h3{margin:18px 0 4px;font:800 15px 'Bricolage Grotesque',sans-serif}
+#settings .note{margin:0 0 8px;color:var(--mut);font-size:12.5px}
+#settings .sft{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+#settings .sft button{flex:1 1 40%;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--inp);cursor:pointer;padding:6px 10px}
+#settings .sft button.pri{flex:1 1 100%;background:var(--acc);border-color:var(--acc);color:#04222a;font-weight:500}
+#settings .sft button:disabled{opacity:.45;cursor:not-allowed}
+#settings button:focus-visible,#settings input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#settings .wrow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-items:center;margin:10px 0 2px}
+#settings .wrow output{font-size:12.5px;color:var(--mut)}
+#settings .wrow input{grid-column:1/3}
+#settings input[type=range]{padding:0;margin:4px 0;border:0;background:none;accent-color:var(--acc);height:28px}
+#settings .shares{font-size:12.5px;margin-top:8px;padding:7px 9px;border-radius:9px;background:var(--inp)}
+#settings .unit{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:2px 0 4px}
+#settings .unit button{background:none;border:0;padding:5px 14px;cursor:pointer;min-height:32px}
+#settings .unit button[aria-pressed=true]{background:var(--acc);color:#04222a;font-weight:500}
+#settings h4{margin:12px 0 0;font-size:12.5px;color:var(--mut);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+#settings .rrow{display:grid;grid-template-columns:1fr 96px 30px;gap:2px 6px;align-items:center;margin:6px 0;font-size:13px}
+#settings .rrow input{margin:0;padding:6px 8px}
+#settings .rrow input.bad{border-color:var(--bad)}
+#settings .rrow small{grid-column:1/4;margin-top:-1px}
+#settings .rrow small.err{color:var(--bad)}
+#settings .opt{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin:7px 0;cursor:pointer}
+#settings .opt:has(input:checked){border-color:var(--acc);background:rgba(62,197,214,.12)}
+#settings .opt input{width:auto;margin:3px 0 0;flex:none}
+#settings .smsg{min-height:20px;margin-top:12px;font-size:12.5px;color:var(--mut)}
+#settings .smsg.err{color:var(--bad)}
+@media(max-width:640px){#settings{width:100vw;border-radius:0}#settings input[type=number]{font-size:16px}#settings .sft button{min-height:46px}}
+@media(prefers-reduced-motion:reduce){#settings{transition:none}}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="top" class="card">
+  <button id="tg" onclick="$('#top').classList.toggle('min')" title="Show or hide controls">▾</button>
+  <h1>SYNOPTICA <span>Urban</span></h1>
+  <div class="body"><input id="q" placeholder="Search a place in Tunisia" autocomplete="off"><div id="res"></div>
+  <div class="sel"><select id="persona" title="Who is this score for?"></select><select id="lens" title="Map lens"></select></div></div>
+</div>
+<div id="dock" class="card" style="background:none;border:0;box-shadow:none">
+  <button class="card" title="My location" onclick="wantMe=true;map.locate()">📍</button>
+  <button class="card" id="bSim" title="Simulation: add a service and see the score change" onclick="toggleSim()">🧪</button>
+  <button class="card" id="bSet" title="Analysis settings: importance, distances" aria-label="Analysis settings" aria-controls="settings" onclick="toggleSettings()">⚙️</button>
+  <button class="card" title="Copy share link" onclick="share()">🔗</button>
+  <button class="card" title="Light / dark" onclick="theme()">🌗</button>
+</div>
+<div id="sim" class="card"><b>Simulation</b><br><small>Click the map to place it.</small><select id="simType"></select><div class="act"><button onclick="undoSim()">Undo</button><button onclick="clearSim()">Clear all</button></div></div>
+<div id="stats" class="card"></div>
+<aside id="panel" class="card"></aside>
+<aside id="settings" class="card" role="dialog" aria-label="Analysis settings" aria-hidden="true"></aside>
+<div id="toast"></div>
+
+<script>
+/* ============ CONFIG (edit here) ============ */
+const CONFIG={
+  dataPath:'urban/data/', iconPath:'urban/icons/',
+  // Optional AI (any OpenAI-compatible endpoint). Leave key '' to use the built-in offline insights.
+  ai:{url:'https://api.cerebras.ai/v1/chat/completions',key:'',model:'llama-3.3-70b'},
+  // Optional Firebase web config: {apiKey,authDomain,projectId,appId}. null = cloud features off.
+  firebase:null
+};
+
+/* ============ MODEL ============ */
+const $=s=>document.querySelector(s), rad=Math.PI/180;
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3500)};
+const SVC=[
+['pharmacy','health','💊','Pharmacies',['Pharmacie'],1000,15],
+['primary','health','🩺','Primary care',['Cabinet médical','Centre médical','Dispensaire'],1500,25],
+['laboratory','health','🧪','Laboratories',['Laboratoire d’analyses'],2000,10],
+['imaging','health','🩻','Imaging centers',['Imagerie médicale'],2000,10],
+['clinic','health','🏨','Clinics',['Clinique'],3000,15],
+['hospital','health','🏥','Hospitals',['Hôpital'],5000,25],
+['police','security','👮','Police',['Police'],2000,30],
+['gn','security','🪖','Garde nationale',['Garde nationale'],3000,25],
+['civil','security','🚒','Protection civile',['Protection civile'],4000,25],
+['customs','security','🛃','Douane',['Douane'],5000,10],
+['taxi','transport','🚕','Taxi stations',['Station taxi'],500,10],
+['bus','transport','🚌','Bus stations',['Station bus'],800,15],
+['metro','transport','🚇','Metro stations',['Station metro'],1000,20],
+['louage','transport','🚐','Louage stations',['Station louage'],2000,15],
+['rail','transport','🚆','Train stations',['Gare'],3000,20]
+].map(([k,c,i,l,v,r,w])=>({k,c,i,l,v,r,w}));
+const ESS=['pharmacy','primary','laboratory','police','taxi','bus','metro']; // reachable in a 15-min walk
+const PERSONAS={
+ default:{n:'Everyone',d:{health:1,security:1,transport:1},m:{}},
+ family:{n:'Family with kids',d:{health:1.3,security:1.1,transport:.8},m:{pharmacy:1.3,primary:1.3}},
+ senior:{n:'Senior',d:{health:1.6,security:.8,transport:.8},m:{taxi:1.6,pharmacy:1.4,primary:1.4},rs:.7},
+ student:{n:'Student',d:{health:.7,security:.9,transport:1.6},m:{bus:1.5,metro:1.5}},
+ nocar:{n:'Car-free',d:{health:1,security:.8,transport:1.5},m:{},rs:.8}
+};
+// Analysis settings. DEF is captured from the values above, so the defaults are always the original ones.
+// AS = settings currently in force (radii live in SVC[].r). Everything starts at the defaults.
+const DEF={dom:{health:1,security:1,transport:1},mode:'smooth',rad:Object.fromEntries(SVC.map(s=>[s.k,s.r]))};
+const AS={ver:0,dom:{...DEF.dom},mode:DEF.mode}; // dom = multiplier on each domain's weight; mode: 'smooth' (distance decay) | 'step' (flat inside radius)
+const byType={}; let sims=[], GOV=[], dMin=0, dMax=1;
+function dist(a,b,c,d){const x=(c-a)*rad,y=(d-b)*rad,h=Math.sin(x/2)**2+Math.cos(a*rad)*Math.cos(c*rad)*Math.sin(y/2)**2;return 12742000*Math.asin(Math.sqrt(h))}
+
+// Smooth distance-decay (0.5 at the nominal radius), probabilistic union across several facilities
+function svcAccess(s,la,ln,rs=1,sim=true){
+  let miss=1,n=0,near=1e9,np=null;const r=s.r*rs;
+  const step=AS.mode==='step'; // 'step': full value inside the radius, none beyond. 'smooth': original distance decay
+  const chk=p=>{const d=dist(la,ln,p.lat,p.lng);if(d<near){near=d;np=p}if(step?d<=r:d<2*r){n++;miss*=step?0:1-1/(1+(d/r)**3)}};
+  for(const t of s.v){(byType[t]||[]).forEach(chk);if(sim)sims.forEach(p=>p.t===t&&chk(p))}
+  return{a:1-miss,n,near,np,r};
+}
+function score(la,ln,pk=S.persona,sim=true){
+  const P=PERSONAS[pk],rs=P.rs||1,dom={health:[0,0],security:[0,0],transport:[0,0]},det=[];
+  for(const s of SVC){const x=svcAccess(s,la,ln,rs,sim),w=s.w*(P.m[s.k]||1);dom[s.c][0]+=w*x.a;dom[s.c][1]+=w;det.push({s,...x})}
+  const D={};let num=0,den=0;
+  for(const c in dom){D[c]=Math.round(100*dom[c][0]/dom[c][1]);const wd=P.d[c]*AS.dom[c];num+=D[c]*wd;den+=wd} // den>0 is guaranteed by the settings validation
+  return{D,total:Math.round(num/den),det};
+}
+function popAt(la,ln){
+  for(const f of GOV){const b=f.bb;if(ln<b[0]||ln>b[2]||la<b[1]||la>b[3])continue;if(turf.booleanPointInPolygon([ln,la],f))return f}
+  return null;
+}
+const pressure=f=>(Math.log10(f.dens+1)-dMin)/((dMax-dMin)||1);
+const grade=v=>v>=60?{l:'Good access',c:'var(--good)'}:v>=35?{l:'Moderate access',c:'var(--mid)'}:{l:'Poor access',c:'var(--bad)'};
+const km=m=>m>=1e8?'none loaded':(m/1000).toFixed(1)+' km';
+
+/* ============ MAP ============ */
+const map=L.map('map',{center:[35.0,9.6],zoom:7,zoomControl:false});
+L.control.zoom({position:'bottomright'}).addTo(map);
+const bases={OpenStreetMap:L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}),
+ Satellite:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19}),
+ Topography:L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',{attribution:'Esri',maxZoom:19})};
+bases.OpenStreetMap.addTo(map);let curBase='OpenStreetMap';
+map.on('baselayerchange',e=>{curBase=e.name;applyInv()});
+function applyInv(){map.getContainer().classList.toggle('inv',!document.body.classList.contains('light')&&curBase==='OpenStreetMap')}
+const clusters={health:L.markerClusterGroup({showCoverageOnHover:false}),security:L.markerClusterGroup({showCoverageOnHover:false}),transport:L.markerClusterGroup({showCoverageOnHover:false})};
+const layersCtl=L.control.layers(bases,{Health:clusters.health,Security:clusters.security,Transportation:clusters.transport},{position:'bottomleft'}).addTo(map);
+const surf=L.layerGroup().addTo(map), aLayer=L.layerGroup().addTo(map), simLayer=L.layerGroup().addTo(map);
+const cv=L.canvas({padding:.2});
+
+let loaded=0;
+const FILES={health:['health.geojson','red-cross.png'],security:['security.geojson','poisecurity.png'],transport:['transport.geojson','transportation.png']};
+for(const c in FILES){
+  fetch(CONFIG.dataPath+FILES[c][0]).then(r=>r.json()).then(g=>{
+    const ic=L.icon({iconUrl:CONFIG.iconPath+FILES[c][1],iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-24]});
+    g.features.forEach(f=>{
+      const gm=f.geometry;if(!gm)return;const [ln,la]=gm.type==='Point'?gm.coordinates:gm.coordinates[0],p=f.properties||{},t=p.Valeur_POI;
+      (byType[t]=byType[t]||[]).push({lat:la,lng:ln,c,t,n:p.Name_POI_F});
+      clusters[c].addLayer(L.marker([la,ln],{icon:ic}).bindPopup(`<b>${p.Name_POI_F||'—'}</b><br>${t||''}`));
+    });ready()}).catch(()=>toast('Could not load '+FILES[c][0]));
+}
+fetch(CONFIG.dataPath+'deleg.geojson').then(r=>r.json()).then(g=>{
+  GOV=g.features.filter(f=>f.geometry);
+  GOV.forEach(f=>{f.bb=turf.bbox(f);f.pop=+f.properties.population||0;f.dens=f.pop/(turf.area(f)/1e6||1)});
+  const ds=GOV.map(f=>Math.log10(f.dens+1));dMin=Math.min(...ds);dMax=Math.max(...ds);
+  layersCtl.addOverlay(L.geoJSON(g,{style:{color:'#8aa',weight:1,fill:false}}),'Delegations');ready();
+}).catch(()=>toast('Could not load deleg.geojson'));
+function ready(){
+  if(++loaded<4)return;
+  const m=location.hash.match(/^#(-?[\d.]+),(-?[\d.]+),?(\w*)/);
+  if(m){if(PERSONAS[m[3]])setPersona(m[3],true);map.setView([+m[1],+m[2]],13);analyze(+m[1],+m[2])}
+  else{map.locate({setView:false});toast('Click anywhere on the map to read its urban score')}
+  drawSurface();
+}
+let wantMe=false;
+map.on('locationfound',e=>{if(wantMe){wantMe=false;map.flyTo(e.latlng,15);analyze(e.latlng.lat,e.latlng.lng);return}if(!S.lat)map.flyTo(e.latlng,14)});
+map.on('locationerror',()=>{wantMe=false;toast('Location is blocked: allow it in your browser settings')});
+
+/* ============ STATE & UI ============ */
+const S={persona:'default',lat:null,lng:null,res:null,base:null,pop:null,env:null,pin:null};
+$('#persona').innerHTML=Object.entries(PERSONAS).map(([k,p])=>`<option value="${k}">${p.n}</option>`).join('');
+$('#lens').innerHTML='<option value="">Lens: off</option><option value="all">Score surface</option><option value="deleg">Delegation ranking</option>'+
+  SVC.map(s=>`<option value="gap:${s.k}">Gaps: ${s.i} ${s.l}</option>`).join('')+
+  ['Hôpital','Clinique','Station metro','Gare'].map(t=>`<option value="heat:${t}">Heatmap: ${t}</option>`).join('');
+function setPersona(k,silent){S.persona=k;try{localStorage.ps=k}catch(e){}$('#persona').value=k;if(setReady)updShares();if(!silent){if(S.lat!=null)analyze(S.lat,S.lng);drawSurface()}}
+$('#persona').onchange=e=>setPersona(e.target.value);
+$('#lens').onchange=drawSurface;
+try{if(PERSONAS[localStorage.ps])setPersona(localStorage.ps,true)}catch(e){}
+let t1;map.on('moveend',()=>{clearTimeout(t1);t1=setTimeout(drawSurface,350)});
+
+/* ---- score surface / gap lens ---- */
+function drawSurface(){
+  surf.clearLayers();const v=$('#lens').value,st=$('#stats');st.style.display='none';
+  if(!v||loaded<4)return;
+  if(v==='deleg'){
+    const key=S.persona+sims.length+'|'+AS.ver;
+    if(rkC.k!==key)rkC={k:key,rk:GOV.map(f=>{const c=f.cp||(f.cp=turf.pointOnFeature(f).geometry.coordinates);return{f,v:score(c[1],c[0]).total}}).sort((a,b)=>a.v-b.v)};
+    const rk=rkC.rk,nm=r=>r.f.properties.NAME_2||r.f.properties.NAME_1||'?';
+    rk.forEach(r=>L.geoJSON(r.f,{renderer:cv,style:{color:'#fff',weight:.6,fillColor:`hsl(${Math.round(r.v*1.15)},70%,50%)`,fillOpacity:.5}}).bindTooltip(`${nm(r)}: ${r.v}`,{sticky:true}).addTo(surf));
+    st.style.display='block';st.innerHTML=`<b>Delegation ranking</b><br>Lowest: ${rk.slice(0,5).map(r=>nm(r)+' '+r.v).join(', ')}<br>Highest: ${rk.slice(-5).reverse().map(r=>nm(r)+' '+r.v).join(', ')}<i></i><small>poor → good</small>`;return}
+  if(v.startsWith('heat:')){
+    const pts=(byType[v.slice(5)]||[]).map(p=>[p.lat,p.lng,15]);
+    surf.addLayer(L.heatLayer(pts,{radius:22,blur:20,maxZoom:12}));return;
+  }
+  const b=map.getBounds(),sz=map.getSize(),N=sz.x<640?16:30,dx=(b.getEast()-b.getWest())/N,rows=Math.max(1,Math.round(sz.y/(sz.x/N))),dy=(b.getNorth()-b.getSouth())/rows;
+  const s=v.startsWith('gap:')?SVC.find(x=>x.k===v.slice(4)):null,P=PERSONAS[S.persona],rs=P.rs||1;
+  let tot=0,unc=0,people=0,sum=0;
+  for(let i=0;i<N;i++)for(let j=0;j<rows;j++){
+    const la=b.getSouth()+dy*(j+.5),ln=b.getWest()+dx*(i+.5),f=popAt(la,ln);
+    if(GOV.length&&!f)continue;
+    let val;tot++;
+    if(s){const x=svcAccess(s,la,ln,rs);val=x.a*100;if(x.near>s.r*rs){unc++;if(f)people+=f.dens*dx*111*Math.cos(la*rad)*dy*111}}
+    else{val=score(la,ln).total;sum+=val}
+    L.rectangle([[la-dy/2,ln-dx/2],[la+dy/2,ln+dx/2]],{renderer:cv,stroke:false,fillColor:`hsl(${Math.round(val*1.15)},70%,50%)`,fillOpacity:.42,interactive:false}).addTo(surf);
+  }
+  st.style.display='block';
+  st.innerHTML=(s?`<b>${s.i} ${s.l}</b><br>${tot?Math.round(100*unc/tot):0}% of this view lies beyond ${km(s.r*rs)}.<br>About <b>${Math.round(people).toLocaleString()}</b> people live in that gap.`
+    :`<b>Score surface</b> for ${P.n}<br>View average: <b>${tot?Math.round(sum/tot):0}</b> / 100`)+'<i></i><small>poor → good</small>';
+}
+
+/* ---- analysis ---- */
+function analyze(la,ln){
+  Object.assign(S,{lat:la,lng:ln,res:score(la,ln),base:sims.length?score(la,ln,S.persona,false):null,env:null});
+  const f=popAt(la,ln);S.pop=f?{f,p:pressure(f)}:null;
+  aLayer.clearLayers();
+  L.circleMarker([la,ln],{radius:7,color:'#fff',fillColor:'#3ec5d6',fillOpacity:1,weight:2}).addTo(aLayer);
+  [417,833,1250].forEach((r,i)=>L.circle([la,ln],{radius:r,color:'#3ec5d6',weight:1,dashArray:'4 5',fill:false,opacity:.8-i*.2}).bindTooltip(`${5*(i+1)} min walk`,{sticky:true}).addTo(aLayer));
+  ['hospital','pharmacy','police','bus','metro'].forEach(k=>{const d=S.res.det.find(x=>x.s.k===k);
+    if(d.np&&d.near<2e4)L.polyline([[la,ln],[d.np.lat,d.np.lng]],{color:'#f5b54a',weight:2,dashArray:'5 6'}).bindTooltip(`${d.s.i} ${km(d.near)}`).addTo(aLayer)});
+  if(S.pin)L.circleMarker([S.pin.lat,S.pin.lng],{radius:8,color:'#f5b54a',fillOpacity:.2}).bindTooltip('Pinned A').addTo(aLayer);
+  history.replaceState(null,'',`#${la.toFixed(5)},${ln.toFixed(5)},${S.persona}`);
+  render();
+  getEnv(la,ln).then(e=>{if(S.lat===la&&S.lng===ln){S.env=e;render()}});
+}
+map.on('click',e=>{if(simOn){addSim(e.latlng);return}if(routeCtl){map.removeControl(routeCtl);routeCtl=null}analyze(e.latlng.lat,e.latlng.lng)});
+
+function ring(v,col){return`<svg viewBox="0 0 100 100" class="ring"><circle cx="50" cy="50" r="44" class="bg"/><circle cx="50" cy="50" r="44" class="fg" style="stroke:${col};stroke-dasharray:276.5;stroke-dashoffset:${276.5*(1-v/100)}"/><text x="50" y="60" text-anchor="middle">${v}</text></svg>`}
+function radar(a,b){
+  const n=a.length,pt=(i,k)=>{const t=-Math.PI/2+i*2*Math.PI/n;return[(90+Math.cos(t)*62*k).toFixed(1),(92+Math.sin(t)*62*k).toFixed(1)]};
+  const poly=v=>v.map((x,i)=>pt(i,x.v/100)).join(' ');
+  return`<svg viewBox="0 0 180 184" class="radar">${[.25,.5,.75,1].map(k=>`<polygon class="grid" points="${a.map((_,i)=>pt(i,k)).join(' ')}"/>`).join('')}
+  ${b?`<polygon class="pin" points="${poly(b)}"/>`:''}<polygon class="shape" points="${poly(a)}"/>
+  ${a.map((x,i)=>{const[p,q]=pt(i,1.3);return`<text x="${p}" y="${q}" text-anchor="middle">${x.l}</text>`}).join('')}</svg>`;
+}
+const metrics=(res,env)=>{
+  const walk=Math.round(100*ESS.filter(k=>res.det.find(x=>x.s.k===k).near<=1250).length/ESS.length);
+  const air=env&&!env.error?Math.max(0,Math.round(100-env.aqi)):0;
+  return[{l:'Health',v:res.D.health},{l:'Security',v:res.D.security},{l:'Transport',v:res.D.transport},{l:'15-min walk',v:walk},{l:'Air',v:air}];
+};
+function insights(){
+  const {res,pop}=S,g=res.det.filter(x=>x.n===0).sort((a,b)=>b.s.w-a.s.w).slice(0,3),w=Object.entries(res.D).sort((a,b)=>a[1]-b[1])[0],t=[];
+  if(g.length)t.push('Missing nearby: '+g.map(x=>`${x.s.l.toLowerCase()} (nearest ${km(x.near)})`).join(', ')+'.');
+  t.push(`Weakest domain is ${w[0]} at ${w[1]}/100.`);
+  if(pop&&pop.p>.6&&res.total<50)t.push('Dense area with weak access: a priority for new services.');
+  return t.join(' ');
+}
+function render(){
+  const {res,base,pop,env,pin}=S;if(!res)return;
+  const g=grade(res.total),m=metrics(res,env),P=PERSONAS[S.persona];
+  const rows=[...res.det].sort((a,b)=>a.a-b.a).map(d=>`<div class="row"><span>${d.s.i}</span><div>${d.s.l}<div class="bar"><b style="width:${Math.round(d.a*100)}%;background:${grade(d.a*100).c}"></b></div></div><small>${d.near<1e8?km(d.near):'n/a'}</small>${d.np?`<button title="Route" onclick="route(${SVC.indexOf(d.s)})">➜</button>`:'<span></span>'}</div>`).join('');
+  const delta=pin?`<div>Compared with pinned A: <b style="color:${res.total>=pin.total?'var(--good)':'var(--bad)'}">${res.total-pin.total>=0?'+':''}${res.total-pin.total}</b></div>`:'';
+  const simd=base?`<div>Simulation: <b>${base.total}</b> now becomes <b style="color:var(--good)">${res.total}</b> (${res.total-base.total>=0?'+':''}${res.total-base.total})</div>`:'';
+  $('#panel').innerHTML=`
+  <div id="grab" onclick="setFull(!PN.classList.contains('full'))"></div><div class="hd"><div><b class="num" style="font-size:16px">${pop?(pop.f.properties.NAME_2?pop.f.properties.NAME_2+', ':'')+(pop.f.properties.NAME_1||''):'Outside delegations'}</b><br><small>${S.lat.toFixed(4)}, ${S.lng.toFixed(4)}</small></div><button class="x" onclick="closeP()">×</button></div>
+  <div class="hero">${ring(res.total,g.c)}<div style="grid-column:2;grid-row:1">${radar(m,pin&&pin.vals)}</div></div>
+  <div class="num" style="font-size:18px;color:${g.c}">${g.l}</div><small>Scored for: ${P.n}</small>${delta}${simd}
+  <div class="chips">${Object.entries(PERSONAS).map(([k,p])=>`<button class="${k===S.persona?'on':''}" onclick="setPersona('${k}')">${p.n}</button>`).join('')}</div>
+  <details open><summary>Service by service, gaps first</summary>${rows}</details>
+  <details><summary>Population and air</summary>
+   ${pop?`<p>Population <b>${pop.f.pop.toLocaleString()}</b>, density <b>${Math.round(pop.f.dens).toLocaleString()}</b> per km². Pressure <b>${Math.round(pop.p*100)}/100</b>.<br>Priority index (need × gap): <b>${Math.round(pop.p*(100-res.total))}</b></p>`:'<p>No delegation found here.</p>'}
+   ${env?env.error?'<p>Air data unavailable.</p>':`<p>🌡️ ${env.t} °C &nbsp; 💨 ${env.w} km/h &nbsp; 🫁 AQI ${env.aqi} (${env.aqi<=20?'excellent':env.aqi<=40?'good':env.aqi<=60?'moderate':env.aqi<=80?'poor':'very poor'})</p>`:'<p><small>Loading air quality…</small></p>'}</details>
+  <details open><summary>Insight</summary><div id="ai">${insights()}</div></details>
+  <div class="act"><button onclick="pinA()">📌 Pin as A</button><button onclick="share()">🔗 Share</button><button onclick="saveCloud()">☁️ Save</button><button onclick="reportIssue()">⚑ Report</button><button onclick="better()">⭐ Better spot nearby</button><button onclick="askAI()">🧠 Ask AI</button></div>`;
+  $('#panel').classList.add('on');document.body.classList.add('sheet');
+}
+const closeP=()=>{setFull(false);document.body.classList.remove('sheet');$('#panel').classList.remove('on');aLayer.clearLayers();history.replaceState(null,'',location.pathname)};
+document.addEventListener('keydown',e=>e.key==='Escape'&&(setOpen?closeSettings():closeP()));
+function pinA(){S.pin={lat:S.lat,lng:S.lng,total:S.res.total,vals:metrics(S.res,S.env)};toast('Pinned. Click another spot to compare.')}
+
+/* ---- routing ---- */
+let routeCtl=null;
+function route(i){
+  const d=S.res.det[i];if(!d.np||!L.Routing)return toast('Routing unavailable');
+  if(routeCtl)map.removeControl(routeCtl);
+  routeCtl=L.Routing.control({waypoints:[L.latLng(S.lat,S.lng),L.latLng(d.np.lat,d.np.lng)],show:false,addWaypoints:false,draggableWaypoints:false,createMarker:()=>null,lineOptions:{styles:[{color:'#3ec5d6',weight:5}]}})
+    .on('routingerror',()=>toast('Route not available')).addTo(map);
+}
+
+/* ---- simulation ---- */
+let simOn=false;
+const SIMOPTS=SVC.flatMap(s=>s.v.map(t=>({t,c:s.c,i:s.i})));
+$('#simType').innerHTML=SIMOPTS.map((o,i)=>`<option value="${i}">${o.i} ${o.t}</option>`).join('');
+function toggleSim(){simOn=!simOn;document.body.classList.toggle('sim',simOn);$('#sim').style.display=simOn?'block':'none';$('#bSim').classList.toggle('on',simOn);map.getContainer().style.cursor=simOn?'crosshair':'';if(simOn)toast('Simulation on: click the map to place a service')}
+function drawSims(){simLayer.clearLayers();sims.forEach(p=>L.marker([p.lat,p.lng],{icon:L.divIcon({html:`<div style="font-size:22px;filter:drop-shadow(0 0 4px #f5b54a)">${p.i}</div>`,className:'',iconSize:[26,26]})}).bindTooltip('Simulated: '+p.t).addTo(simLayer))}
+function afterSim(){drawSims();drawSurface();if(S.lat!=null)analyze(S.lat,S.lng)}
+function addSim(ll){const o=SIMOPTS[$('#simType').value];sims.push({lat:ll.lat,lng:ll.lng,...o});afterSim()}
+const undoSim=()=>{sims.pop();afterSim()},clearSim=()=>{sims=[];afterSim()};
+
+/* ---- environment ---- */
+async function getEnv(la,ln){
+  try{
+    const [w,a]=await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${ln}&current=temperature_2m,wind_speed_10m`).then(r=>r.json()),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${la}&longitude=${ln}&current=european_aqi`).then(r=>r.json())]);
+    return{t:w.current.temperature_2m,w:w.current.wind_speed_10m,aqi:Math.round(a.current.european_aqi)};
+  }catch(e){return{error:true}}
+}
+
+/* ---- AI (optional) ---- */
+async function askAI(){
+  const el=$('#ai');if(!CONFIG.ai.key){el.textContent=insights()+'\n\n(Add an AI key in CONFIG for investment ideas with cost estimates.)';return}
+  el.textContent='Thinking…';
+  const data={persona:S.persona,total:S.res.total,domains:S.res.D,gaps:S.res.det.filter(d=>d.n===0).map(d=>d.s.l),population:S.pop&&{pop:S.pop.f.pop,pressure:+S.pop.p.toFixed(2)}};
+  try{
+    const r=await fetch(CONFIG.ai.url,{method:'POST',headers:{Authorization:'Bearer '+CONFIG.ai.key,'Content-Type':'application/json'},
+      body:JSON.stringify({model:CONFIG.ai.model,max_tokens:260,messages:[{role:'system',content:'You are an expert urban planner for Tunisia.'},{role:'user',content:'Give 3 concrete, short investment recommendations with rough costs in Tunisian dinars for this area: '+JSON.stringify(data)}]})});
+    el.textContent=(await r.json()).choices[0].message.content.trim();
+  }catch(e){el.textContent=insights()}
+}
+
+/* ---- share and optional Firebase ---- */
+function share(){if(navigator.share&&S.lat!=null)return navigator.share({title:'Urban score',url:location.href}).catch(()=>{});navigator.clipboard.writeText(location.href).then(()=>toast('Link copied')).catch(()=>toast(location.href))}
+let DB=null;
+async function fb(){
+  if(!CONFIG.firebase){toast('Add your Firebase config in CONFIG to enable cloud features');return null}
+  if(DB)return DB;
+  for(const u of['app','auth','firestore'])await new Promise(r=>{const s=document.createElement('script');s.src=`https://www.gstatic.com/firebasejs/10.12.2/firebase-${u}-compat.js`;s.onload=r;document.head.appendChild(s)});
+  firebase.initializeApp(CONFIG.firebase);await firebase.auth().signInAnonymously();return DB=firebase.firestore();
+}
+async function saveCloud(){const db=await fb();if(!db)return;
+  await db.collection('analyses').add({lat:S.lat,lng:S.lng,persona:S.persona,total:S.res.total,domains:S.res.D,at:firebase.firestore.FieldValue.serverTimestamp()});toast('Analysis saved')}
+async function reportIssue(){const db=await fb();if(!db)return;const note=prompt('What is wrong or missing here? (closed pharmacy, new bus stop…)');if(!note)return;
+  await db.collection('reports').add({lat:S.lat,lng:S.lng,note,at:firebase.firestore.FieldValue.serverTimestamp()});toast('Thanks, report sent')}
+
+/* ---- search, theme ---- */
+let st;$('#q').oninput=e=>{
+  clearTimeout(st);const q=e.target.value.trim(),box=$('#res');box.innerHTML='';if(q.length<3)return;
+  st=setTimeout(()=>fetch(`https://nominatim.openstreetmap.org/search?format=json&countrycodes=tn&limit=5&q=${encodeURIComponent(q)}`).then(r=>r.json()).then(d=>{
+    d.forEach(p=>{const b=document.createElement('button');b.textContent=p.display_name;b.onclick=()=>{box.innerHTML='';$('#q').value='';map.setView([+p.lat,+p.lon],14);analyze(+p.lat,+p.lon)};box.appendChild(b)})}),350);
+};
+function theme(f){const l=f!==undefined?f:!document.body.classList.contains('light');document.body.classList.toggle('light',l);try{localStorage.th=l?'l':'d'}catch(e){}applyInv()}
+
+/* ---- bottom sheet (phone) ---- */
+const PN=$('#panel');let rkC={},ty=null;
+function setFull(f){PN.classList.toggle('full',f);document.body.classList.toggle('full',f)}
+PN.addEventListener('touchstart',e=>{ty=e.target.closest('#grab,.hd')?e.touches[0].clientY:null},{passive:true});
+PN.addEventListener('touchend',e=>{if(ty==null)return;const d=e.changedTouches[0].clientY-ty,f=PN.classList.contains('full');ty=null;
+  if(d<-30&&!f)setFull(true);else if(d>30){f?setFull(false):closeP()}},{passive:true});
+
+/* ---- find a better spot within 1.5 km ---- */
+function better(){
+  const{lat:la,lng:ln}=S;let b={v:S.res.total,la,ln};
+  for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){const a=la+i*.0045,o=ln+j*.0045/Math.cos(la*rad),v=score(a,o).total;if(v>b.v)b={v,la:a,ln:o}}
+  if(b.la===la&&b.ln===ln)return toast('Already the best spot within 1.5 km');
+  L.polyline([[la,ln],[b.la,b.ln]],{color:'#58d68d',weight:3}).addTo(aLayer);
+  L.marker([b.la,b.ln],{icon:L.divIcon({html:'<div style="font-size:26px">⭐</div>',className:'',iconSize:[26,26]})}).bindTooltip(`Better: ${b.v} (+${b.v-S.res.total})`,{permanent:true}).addTo(aLayer);
+  map.flyTo([(la+b.la)/2,(ln+b.ln)/2],15);toast(`A spot ${Math.round(dist(la,ln,b.la,b.ln))} m away scores ${b.v}`);
+}
+
+/* ============ ANALYSIS SETTINGS ============ */
+var setReady=false; let setOpen=false, dr=null, unit='m';
+const SET=$('#settings'), RMIN=100, RMAX=10000;
+const DOMS={health:['🏥','Health'],security:['🛡️','Security'],transport:['🚌','Transport']};
+const fmtR=m=>m>=1000?(+(m/1000).toFixed(2))+' km':Math.round(m)+' m';
+const curSet=()=>({dom:{...AS.dom},mode:AS.mode,rad:Object.fromEntries(SVC.map(s=>[s.k,s.r]))});
+const defSet=()=>({dom:{...DEF.dom},mode:DEF.mode,rad:{...DEF.rad}});
+const sameSet=(a,b)=>a.mode===b.mode&&Object.keys(DOMS).every(c=>a.dom[c]===b.dom[c])&&SVC.every(s=>a.rad[s.k]===b.rad[s.k]);
+const radOK=v=>Number.isFinite(v)&&v>=RMIN&&v<=RMAX;
+
+SET.innerHTML=`
+ <div class="hd" style="padding:12px 14px 0"><div><b class="num" style="font-size:17px">Analysis settings</b><br><small>Change how scores are calculated. Nothing changes until you press “Apply changes”.</small></div><button class="x" id="sX" aria-label="Close settings">×</button></div>
+ <div class="sbody">
+  <h3>1. What matters most?</h3>
+  <p class="note">Higher importance means that area has more influence on the final score. 100% is the standard setting; 0% leaves it out of the final score. The profile you picked (for example Senior) is already included.</p>
+  ${Object.entries(DOMS).map(([c,[i,l]])=>`<div class="wrow"><label for="w-${c}">${i} ${l}</label><output for="w-${c}" id="wo-${c}"></output><input type="range" id="w-${c}" data-w="${c}" min="0" max="200" step="5"></div>`).join('')}
+  <div class="shares" id="shares" aria-live="polite"></div>
+  <h3>2. How far should services be?</h3>
+  <p class="note">The longest distance you consider reasonable to reach each service. A smaller distance is stricter. Allowed: 100 m to 10 km. Profiles like Senior or Car-free shorten these slightly.</p>
+  <div class="unit" role="group" aria-label="Distance unit"><button type="button" data-u="m" aria-pressed="true">Meters</button><button type="button" data-u="km" aria-pressed="false">Kilometers</button></div>
+  ${Object.entries(DOMS).map(([c,[i,l]])=>`<h4>${i} ${l}</h4>`+SVC.filter(s=>s.c===c).map(s=>`<div class="rrow"><label for="r-${s.k}"><span aria-hidden="true">${s.i}</span> ${s.l}</label><input type="number" inputmode="decimal" id="r-${s.k}" data-r="${s.k}" aria-describedby="e-${s.k}"><span class="u" data-unit>m</span><small id="e-${s.k}">Standard: ${fmtR(DEF.rad[s.k])}</small></div>`).join('')).join('')}
+  <h3>3. How does distance affect accessibility?</h3>
+  <fieldset style="border:0;padding:0;margin:0"><legend class="note" style="padding:0">Choose how a service’s value changes with distance.</legend>
+   <label class="opt"><input type="radio" name="dmode" value="step"><span><b>Same importance within the radius</b><br><small>A service counts fully if it is inside the distance you set, and not at all if it is further away.</small></span></label>
+   <label class="opt"><input type="radio" name="dmode" value="smooth"><span><b>Nearby services count more than distant services</b> (standard)<br><small>The closer a service is, the more it counts. Its value fades gradually and is about half at the distance you set; services a little beyond it still count slightly.</small></span></label>
+  </fieldset>
+  <div class="smsg" id="sMsg" role="status" aria-live="polite"></div>
+ </div>
+ <div class="sft"><button class="pri" id="sApply">Apply changes</button><button id="sReset">Reset to defaults</button><button id="sCancel">Cancel</button></div>`;
+
+const wTxt=v=>v===0?'left out':v<100?'lower':v===100?'standard':'higher';
+function syncForm(){ // draft -> controls
+  for(const c in DOMS){const v=Math.round(dr.dom[c]*100);$('#w-'+c).value=v;$('#wo-'+c).textContent=v+'% ('+wTxt(v)+')'}
+  for(const s of SVC){const el=$('#r-'+s.k),m=dr.rad[s.k];if(Number.isFinite(m))el.value=unit==='km'?+(m/1000).toFixed(3):m}
+  SET.querySelectorAll('[name=dmode]').forEach(r=>r.checked=r.value===dr.mode);
+  setUnitAttrs();check();
+}
+function setUnitAttrs(){
+  SET.querySelectorAll('[data-u]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.u===unit));
+  SET.querySelectorAll('[data-unit]').forEach(e=>e.textContent=unit);
+  SVC.forEach(s=>{const el=$('#r-'+s.k);el.min=unit==='km'?RMIN/1000:RMIN;el.max=unit==='km'?RMAX/1000:RMAX;el.step=unit==='km'?.1:50});
+}
+function updShares(){
+  if(!dr)return;const P=PERSONAS[S.persona],w=Object.keys(DOMS).map(c=>P.d[c]*dr.dom[c]),t=w.reduce((a,b)=>a+b,0),el=$('#shares');
+  el.innerHTML=t>0?'Share of the final score: '+Object.keys(DOMS).map((c,i)=>`<b>${DOMS[c][1]} ${Math.round(100*w[i]/t)}%</b>`).join(' · '):'';
+}
+function check(){ // validate the draft, update messages and buttons
+  let bad=0;
+  for(const s of SVC){const ok=radOK(dr.rad[s.k]),el=$('#r-'+s.k),e=$('#e-'+s.k);bad+=!ok;el.classList.toggle('bad',!ok);el.setAttribute('aria-invalid',!ok);
+    e.className=ok?'':'err';e.textContent=ok?'Standard: '+fmtR(DEF.rad[s.k])+(dr.rad[s.k]!==DEF.rad[s.k]?' · now '+fmtR(dr.rad[s.k]):''):'Enter a distance between 100 m and 10 km.'}
+  const zero=Object.keys(DOMS).every(c=>dr.dom[c]===0),dirty=!sameSet(dr,curSet()),m=$('#sMsg');
+  updShares();
+  m.className='smsg'+(bad||zero?' err':'');
+  m.textContent=zero?'Keep at least one area above 0%, otherwise there is no final score.':bad?`Please fix ${bad} distance${bad>1?'s':''} marked in red.`:dirty?'You have changes that are not applied yet.':'No changes to apply.';
+  $('#sApply').disabled=!!(bad||zero||!dirty);
+}
+SET.addEventListener('input',e=>{
+  const t=e.target;if(!dr)return;
+  if(t.dataset.w){dr.dom[t.dataset.w]=+t.value/100;const v=+t.value;$('#wo-'+t.dataset.w).textContent=v+'% ('+wTxt(v)+')'}
+  else if(t.dataset.r){const v=parseFloat(t.value);dr.rad[t.dataset.r]=t.value.trim()===''?NaN:Math.round(unit==='km'?v*1000:v)}
+  else if(t.name==='dmode')dr.mode=t.value;
+  check();
+});
+SET.addEventListener('click',e=>{
+  const b=e.target.closest('[data-u]');if(!b||!dr)return;unit=b.dataset.u;syncForm();
+});
+
+function openSettings(){dr=curSet();setOpen=true;syncForm();SET.classList.add('on');SET.setAttribute('aria-hidden','false');$('#bSet').classList.add('on');setTimeout(()=>$('#sX').focus(),50)}
+function closeSettings(){setOpen=false;SET.classList.remove('on');SET.setAttribute('aria-hidden','true');$('#bSet').classList.remove('on');dr=null;$('#bSet').focus()}
+const toggleSettings=()=>setOpen?closeSettings():openSettings();
+$('#sX').onclick=$('#sCancel').onclick=closeSettings;
+
+// Put a full set of settings into force and refresh everything that depends on it.
+function commitSettings(c){
+  SVC.forEach(s=>s.r=c.rad[s.k]);AS.dom={...c.dom};AS.mode=c.mode;AS.ver++;
+  rkC={};                                  // delegation ranking cache
+  if(S.pin){const r=score(S.pin.lat,S.pin.lng),v=metrics(r,null);v[4]=S.pin.vals[4];S.pin={...S.pin,total:r.total,vals:v}} // pinned comparison point
+  drawSurface();                           // score surface, gap lens, delegation ranking
+  if(S.lat!=null)analyze(S.lat,S.lng);     // scores, radar, service list, insights, distance rings, best-spot overlay
+}
+$('#sApply').onclick=()=>{if($('#sApply').disabled)return;commitSettings(dr);closeSettings();toast('Settings applied: all scores updated')};
+$('#sReset').onclick=()=>{
+  const changed=!sameSet(curSet(),defSet());dr=defSet();syncForm();
+  if(changed)commitSettings(defSet());
+  toast('Original settings restored');
+};
+setReady=true;
+try{theme(localStorage.th!=='d')}catch(e){theme(true)}
+</script>
+</body>
+</html>
