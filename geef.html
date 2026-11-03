@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GeoTime Machine</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<style>
+:root{--bg:#0d1117;--panel:rgba(18,24,33,.94);--line:#263041;--tx:#e6edf3;--mu:#8b98a9;--ac:#2dd4bf;--ac2:#f59e0b}
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:var(--bg);color:var(--tx);font:13px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+header{position:absolute;top:0;left:0;right:0;height:52px;z-index:1100;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:15px;margin:0;font-weight:650;white-space:nowrap}header h1 span{color:var(--ac)}
+#range{color:var(--mu);font-size:12px;white-space:nowrap}.sp{flex:1}
+button,select,input{font:inherit;color:var(--tx)}
+button{background:#1b2431;border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer;transition:.15s;white-space:nowrap}
+button:hover{border-color:var(--ac)}button.pri{background:var(--ac);color:#04201c;border-color:var(--ac);font-weight:600}button:disabled{opacity:.45;cursor:not-allowed}
+select,input[type=text]{background:#111823;border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+#map{position:absolute;inset:52px 0 0 0;background:#0b0f14}
+.pn{position:absolute;z-index:1000;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;backdrop-filter:blur(8px)}
+#left{top:64px;left:56px;width:290px;max-height:calc(100% - var(--tlh,100px) - 90px);overflow:auto}
+#right{top:64px;right:12px;width:min(350px,calc(100vw - 420px));min-width:300px;max-height:calc(100% - var(--tlh,100px) - 90px);overflow:auto}
+#tl{bottom:12px;left:12px;right:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.pn.off{display:none}h3{margin:12px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}h3:first-child{margin-top:0}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.row>*{flex:1}
+#res{position:absolute;z-index:1200;background:#111823;border:1px solid var(--line);border-radius:8px;width:266px;max-height:200px;overflow:auto;display:none}
+#res div{padding:7px 9px;cursor:pointer;border-bottom:1px solid var(--line)}#res div:hover{background:#1b2431}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:#111823;border:1px solid var(--line);border-radius:10px;padding:8px}
+.card b{display:block;font-size:17px}.card small{color:var(--mu)}.pos{color:#4ade80}.neg{color:#f87171}
+canvas{background:#111823;border:1px solid var(--line);border-radius:10px;margin-top:6px;max-height:170px}
+#legend .bar{height:10px;border-radius:5px;margin:4px 0}#legend div.l{display:flex;justify-content:space-between;color:var(--mu);font-size:11px}
+.note{color:var(--mu);font-size:11.5px}.tlg{flex:1;min-width:200px}.tlg label{display:flex;justify-content:space-between;color:var(--mu);font-size:12px}.tlg input{width:100%;accent-color:var(--ac)}
+#msg{position:absolute;z-index:1300;top:60px;left:50%;transform:translateX(-50%);max-width:92%;background:#1b2431;border:1px solid var(--ac2);border-radius:10px;padding:8px 14px;display:none;text-align:center}
+#load{position:absolute;z-index:1250;top:64px;left:50%;transform:translateX(-50%);display:none;background:#111823;border:1px solid var(--line);border-radius:20px;padding:5px 14px;color:var(--ac)}
+#div{position:absolute;z-index:900;top:52px;bottom:0;width:4px;margin-left:-2px;background:#fff;display:none;cursor:ew-resize;touch-action:none}
+#div::after{content:"⇆";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#fff;color:#111;display:grid;place-items:center;font-size:18px;box-shadow:0 2px 10px #0008}
+.lb{position:absolute;z-index:950;top:64px;background:#000a;padding:3px 10px;border-radius:6px;font-weight:600;display:none;pointer-events:none}
+.lb{max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#lbB{right:calc(100% - var(--lx,50%) + 10px)}#lbA{left:calc(var(--lx,50%) + 10px)}
+@media(max-width:800px){#left,#right{left:0;right:0;width:auto;top:auto;bottom:calc(var(--tlh,110px) + 20px);max-height:calc(100dvh - var(--tlh,110px) - 130px);border-radius:14px 14px 0 0}
+#range,header h1 small,#bFs,.leaflet-control-zoom{display:none}#tl{gap:8px 12px;padding:8px 10px;left:8px;right:8px;bottom:8px}.tlg{min-width:130px}
+header{gap:6px;padding:0 8px}header button{padding:6px 8px;font-size:12px}#res{width:calc(100vw - 48px)}#div::after{top:35%}.lb{font-size:11px;top:60px}}
+@media(max-width:520px){header h1 .t{display:none}}
+</style></head><body>
+<script>
+/* ================= CONFIGURATION (edit here) ================= */
+window.GEE_INLINE={
+  clientId:"13962050498-1nat1l2g0j9eenm6m695pge3pr00ctua.apps.googleusercontent.com",
+  project:"noted-point-414222",
+  tokenEndpoint:"", eeLib:""   // optional, leave empty
+};
+</script>
+<header>
+  <h1>🛰️ <b class="t">GeoTime <span>Machine</span></b> <small style="color:var(--mu);font-weight:400">· Sentinel-2 via Earth Engine</small></h1>
+  <span id="range"></span><span class="sp"></span>
+  <button id="bL">Controls</button><button id="bR">Results</button>
+  <button id="bFs" title="Fullscreen">⛶</button>
+  <button id="bAuth" class="pri">Connect Earth Engine</button>
+</header>
+<div id="map"></div><div id="div"></div><div class="lb" id="lbB"></div><div class="lb" id="lbA"></div>
+<div id="msg"></div><div id="load">Loading imagery…</div>
+
+<section class="pn" id="left">
+  <h3>Search location</h3><input type="text" id="q" placeholder="Search a place…" autocomplete="off"><div id="res"></div>
+  <h3>View mode</h3>
+  <select id="mode">
+    <option value="rgb">True colour · swipe</option><option value="ndvi">NDVI · swipe</option><option value="ndbi">NDBI · swipe</option>
+    <option value="dndvi">NDVI change · swipe</option><option value="dndbi">NDBI change · swipe</option>
+  </select>
+  <h3>Basemap</h3>
+  <select id="base"><option value="esri">Esri World Imagery</option><option value="osm">OpenStreetMap</option></select>
+  <h3>Area of interest</h3>
+  <div class="row"><button id="dRect">▭ Rectangle</button><button id="dPoly">⬠ Polygon</button></div>
+  <div class="note">Or click the map to select a ~2 km box around a point.</div>
+  <h3>Legend</h3><div id="legend" class="note">Connect Earth Engine to load imagery.</div>
+  <p class="note">Annual median composites, cloud-masked with Sentinel-2 SCL. Resolution 10–20 m.</p>
+</section>
+
+<section class="pn" id="right">
+  <h3>Summary <span class="note" id="state"></span></h3>
+  <div class="cards" id="cards"><div class="card"><small>Area</small><b id="mArea">—</b></div><div class="card"><small>Mean NDVI</small><b id="mNdvi">—</b></div>
+  <div class="card"><small>Vegetation gain / loss</small><b id="mVeg">—</b></div><div class="card"><small>Built-up gain / loss</small><b id="mBu">—</b></div></div>
+  <h3>Vegetation (mean NDVI / year)</h3><canvas id="c1"></canvas>
+  <h3>Built-up (mean NDBI / year)</h3><canvas id="c2"></canvas>
+  <h3>Export</h3>
+  <div class="row"><button id="eGeo">AOI GeoJSON</button><button id="eCsv">Stats CSV</button><button id="eRep">Report</button></div>
+  <p class="note" id="disc">Estimates are pixel-based (threshold ±0.15 index change). NDBI also responds to bare soil, so built-up change is indicative only. No data are simulated: results appear only after live Earth Engine queries.</p>
+</section>
+
+<section class="pn" id="tl">
+  <div class="tlg"><label><span>Before</span><b id="yB"></b></label><input type="range" id="rB"></div>
+  <div class="tlg"><label><span>After</span><b id="yA"></b></label><input type="range" id="rA"></div>
+  <button id="play">▶ Play</button>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+<script>
+"use strict";
+/* ================= SETTINGS ================= */
+const G=window.GEE_INLINE||{};
+const CFG={
+  center:[36.8065,10.1815],zoom:12,
+  years:{min:2018,max:2025},          // Sentinel-2 SR Harmonized has reliable global coverage from ~2018
+  collection:"COPERNICUS/S2_SR_HARMONIZED",maxCloud:40,threshold:0.15,scale:20,
+  eeLib:G.eeLib||"https://cdn.jsdelivr.net/npm/@google/earthengine/build/ee_api_js.js",
+  gis:"https://accounts.google.com/gsi/client",
+  basemaps:{
+    esri:{url:"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",att:"Imagery © Esri, Maxar, Earthstar Geographics",max:19},
+    osm:{url:"https://tile.openstreetmap.org/{z}/{x}/{y}.png",att:"© OpenStreetMap contributors",max:19}},
+  geocoder:"https://nominatim.openstreetmap.org/search",
+  defaultAOI:[[36.855,10.150],[36.905,10.230]]   // northern Tunis suburbs (Ariana / Raoued)
+};
+const RGB={bands:["B4","B3","B2"],min:0.02,max:0.28};
+const VIS={
+  ndvi:{min:-0.1,max:0.8,palette:["8c510a","d8b365","f6e8c3","a6d96a","1a9850","004529"],label:"NDVI"},
+  ndbi:{min:-0.5,max:0.3,palette:["2b83ba","abdda4","ffffbf","fdae61","d7191c"],label:"NDBI"},
+  dndvi:{min:-0.4,max:0.4,palette:["d73027","fc8d59","2b2b2b","91cf60","1a9850"],label:"NDVI change (red = loss, green = gain)"},
+  dndbi:{min:-0.4,max:0.4,palette:["2b83ba","abdda4","2b2b2b","fdae61","d7191c"],label:"NDBI change (blue = loss, red = built-up gain)"}};
+
+/* ================= STATE & HELPERS ================= */
+const $=s=>document.querySelector(s);
+const S={yb:2018,ya:2025,mode:"rgb",split:.5,aoi:null,aoiLayer:null,ready:false,tok:0,stats:null,series:null,bl:null,al:null,drawing:false,timer:null};
+const cache=new Map();
+const debounce=(f,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>f(...a),ms)}};
+const fmt=(n,d=2)=>n==null||isNaN(n)?"—":(+n).toFixed(d);
+function msg(t,ms=6000){const m=$("#msg");m.textContent=t;m.style.display="block";clearTimeout(msg.t);if(ms)msg.t=setTimeout(()=>m.style.display="none",ms)}
+const loading=on=>$("#load").style.display=on?"block":"none";
+const ev=o=>new Promise((res,rej)=>o.evaluate((r,e)=>e?rej(new Error(e)):res(r)));
+const loadScript=src=>new Promise((r,j)=>{const s=document.createElement("script");s.src=src;s.onload=r;s.onerror=()=>j(new Error("Could not load "+src));document.head.appendChild(s)});
+
+/* ================= MAP ================= */
+const map=L.map("map",{zoomControl:false,center:CFG.center,zoom:CFG.zoom,maxZoom:19});
+L.control.zoom({position:"topleft"}).addTo(map);
+let base=null;
+function setBase(k){if(base)map.removeLayer(base);const b=CFG.basemaps[k];base=L.tileLayer(b.url,{attribution:b.att,maxZoom:b.max,zIndex:1}).addTo(map)}
+const aoiGroup=L.featureGroup().addTo(map);
+function setAOI(layer){
+  let gj;try{gj=layer.toGeoJSON();const a=turf.area(gj)/1e6;
+    if(!(a>0))throw new Error("empty");if(a>2500){msg("Area too large ("+fmt(a,0)+" km²). Draw an area under 2,500 km².");return}
+  }catch(e){msg("Invalid geometry — please draw a valid area.");return}
+  aoiGroup.clearLayers();layer.setStyle({color:"#f59e0b",weight:2,fillOpacity:.08});aoiGroup.addLayer(layer);
+  S.aoi=gj;S.aoiLayer=layer;$("#mArea").textContent=fmt(turf.area(gj)/1e6)+" km²";scheduleAnalysis();
+}
+function setDrawing(on){S.drawing=on}
+function startDraw(kind){
+  const o={shapeOptions:{color:"#f59e0b"}};
+  const h=kind==="rect"?new L.Draw.Rectangle(map,o):new L.Draw.Polygon(map,{...o,allowIntersection:false});h.enable()}
+map.on("draw:drawstart",()=>setDrawing(true));
+map.on("draw:drawstop",()=>setTimeout(()=>setDrawing(false),50));
+map.on("draw:created",e=>setAOI(e.layer));
+map.on("click",e=>{if(S.drawing)return;const d=.009,{lat,lng}=e.latlng;
+  setAOI(L.rectangle([[lat-d,lng-d*1.25],[lat+d,lng+d*1.25]]))});
+
+/* ================= SWIPE COMPARISON ================= */
+function clipLayers(){
+  const{bl,al}=S;if(!bl||!al||!bl.getContainer()||!al.getContainer())return;
+  const sz=map.getSize(),nw=map.containerPointToLayerPoint([0,0]),se=map.containerPointToLayerPoint(sz),x=nw.x+sz.x*S.split;
+  const r=(a,b,c,d)=>`rect(${a}px,${b}px,${c}px,${d}px)`;
+  bl.getContainer().style.clip=r(nw.y,x,se.y,nw.x);al.getContainer().style.clip=r(nw.y,se.x,se.y,x)}
+function placeDivider(){const x=$("#map").clientWidth*S.split;$("#div").style.left=x+"px";document.documentElement.style.setProperty("--lx",x+"px")}
+map.on("move zoom viewreset resize",clipLayers);map.on("resize",placeDivider);
+(function(){const d=$("#div");let drag=false;
+  d.addEventListener("pointerdown",e=>{drag=true;d.setPointerCapture(e.pointerId)});
+  d.addEventListener("pointerup",()=>drag=false);
+  d.addEventListener("pointermove",e=>{if(!drag)return;S.split=Math.min(.97,Math.max(.03,e.clientX/$("#map").clientWidth));placeDivider();clipLayers()})})();
+
+/* ================= EARTH ENGINE: AUTH & IMAGERY ================= */
+const libs=Promise.all([loadScript(CFG.gis),loadScript(CFG.eeLib)]).catch(e=>{msg(e.message+" — check your network/ad-blocker.");throw e});
+libs.catch(()=>{});
+async function connectEE(){
+  const btn=$("#bAuth");btn.disabled=true;btn.textContent="Connecting…";
+  try{
+    await libs;
+    if(!G.clientId&&!G.tokenEndpoint)throw new Error("Set GEE_INLINE.clientId (or tokenEndpoint) in the configuration section.");
+    const tok=G.tokenEndpoint?await (await fetch(G.tokenEndpoint)).json():
+      await new Promise((res,rej)=>google.accounts.oauth2.initTokenClient({client_id:G.clientId,scope:"https://www.googleapis.com/auth/earthengine",
+        error_callback:e=>rej(new Error(e.message||e.type||"Sign-in cancelled")),callback:r=>r.error?rej(new Error(r.error)):res(r)}).requestAccessToken());
+    ee.data.setAuthToken(G.clientId||"",  "Bearer",tok.access_token,+tok.expires_in||3600,[],undefined,false);
+    await new Promise((res,rej)=>ee.initialize(null,null,res,e=>rej(new Error(e)),null,G.project));
+    S.ready=true;btn.textContent="Earth Engine ✓";msg("Connected to Earth Engine. Loading demo comparison…",3500);
+    refresh();runAnalysis();
+  }catch(e){btn.disabled=false;btn.textContent="Connect Earth Engine";
+    msg("Earth Engine error: "+e.message+" (Check that this page's origin is listed as an Authorized JavaScript origin and the project is registered for Earth Engine.)",12000)}
+}
+/* Cloud-masked annual median composite of Sentinel-2 L2A (reflectance 0–1). */
+function composite(y){
+  const start=ee.Date.fromYMD(y,1,1);
+  return ee.ImageCollection(CFG.collection).filterDate(start,start.advance(1,"year"))
+    .filter(ee.Filter.lt("CLOUDY_PIXEL_PERCENTAGE",CFG.maxCloud))
+    .map(i=>{const s=i.select("SCL");const ok=s.neq(3).and(s.neq(8)).and(s.neq(9)).and(s.neq(10)).and(s.neq(11));
+      return i.select(["B2","B3","B4","B8","B11"]).divide(10000).updateMask(ok)}).median()}
+const index=(im,m)=>m==="ndvi"?im.normalizedDifference(["B8","B4"]).rename("ndvi"):im.normalizedDifference(["B11","B8"]).rename("ndbi");
+function spec(y,m){return m==="rgb"?[composite(y),RGB]:[index(composite(y),m),VIS[m]]}
+const tiles=(img,vis)=>new Promise((res,rej)=>img.getMap(vis,(m,e)=>(e||!m)?rej(new Error(e||"No tiles")):res(m.urlFormat)));
+
+function drawLegend(v,label){
+  if(!v){$("#legend").innerHTML="True-colour Sentinel-2 (B4/B3/B2)";return}
+  $("#legend").innerHTML=`<div>${label}</div><div class="bar" style="background:linear-gradient(90deg,${v.palette.map(c=>"#"+c).join(",")})"></div><div class="l"><span>${v.min}</span><span>${v.max}</span></div>`}
+function clearLayers(){["bl","al"].forEach(k=>{if(S[k]){map.removeLayer(S[k]);S[k]=null}})}
+/* Rebuild the imagery layers for the current dates/mode; stale requests are discarded via a token. */
+async function refresh(){
+  if(!S.ready)return;const t=++S.tok;loading(true);
+  try{
+    const o={maxZoom:19,zIndex:5,attribution:"Contains modified Copernicus Sentinel data · Google Earth Engine"};
+    let ub,ua,lb,la,leg;
+    if(S.mode[0]==="d"){   /* change detection: true-colour "after" on the left, change map on the right of the swipe bar */
+      const m=S.mode.slice(1),d=index(composite(S.ya),m).subtract(index(composite(S.yb),m));
+      [ub,ua]=await Promise.all([tiles(composite(S.ya),RGB),tiles(d,VIS[S.mode])]);
+      lb="After · true colour";la="Change "+S.yb+" → "+S.ya;leg=VIS[S.mode];o.opacity=1;
+    }else{
+      [ub,ua]=await Promise.all([tiles(...spec(S.yb,S.mode)),tiles(...spec(S.ya,S.mode))]);
+      lb="Before · "+S.yb;la="After · "+S.ya;leg=S.mode==="rgb"?null:VIS[S.mode];
+    }
+    if(t!==S.tok)return;clearLayers();
+    S.bl=L.tileLayer(ub,{...o,opacity:1}).addTo(map);S.al=L.tileLayer(ua,{...o,zIndex:6}).addTo(map);
+    drawLegend(leg,leg&&leg.label);
+    $("#div").style.display=$("#lbB").style.display=$("#lbA").style.display="block";
+    $("#lbB").textContent=lb;$("#lbA").textContent=la;placeDivider();
+    S.bl.on("tileload",clipLayers);S.al.on("tileload",clipLayers);setTimeout(clipLayers,50);
+  }catch(e){msg("Imagery request failed: "+e.message+". Dates without clear Sentinel-2 coverage return empty tiles.")}
+  finally{if(t===S.tok)loading(false)}
+}
+
+/* ================= ANALYSIS ================= */
+const charts={};
+function initCharts(){
+  const mk=(id,color)=>new Chart($(id),{type:"line",data:{labels:[],datasets:[{data:[],borderColor:color,backgroundColor:color+"33",tension:.3,fill:true,
+    pointRadius:c=>[S.yb,S.ya].includes(+c.chart.data.labels[c.dataIndex])?6:3,pointBackgroundColor:c=>[S.yb,S.ya].includes(+c.chart.data.labels[c.dataIndex])?"#fff":color}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#8b98a9"},grid:{color:"#263041"}},y:{ticks:{color:"#8b98a9"},grid:{color:"#263041"}}}}});
+  charts.v=mk("#c1","#4ade80");charts.b=mk("#c2","#f59e0b")}
+function updateCharts(){if(!S.series)return;
+  const l=S.series.map(r=>r.year);[["v","ndvi"],["b","ndbi"]].forEach(([c,k])=>{charts[c].data.labels=l;charts[c].data.datasets[0].data=S.series.map(r=>r[k]);charts[c].update()})}
+async function runAnalysis(){
+  if(!S.ready||!S.aoi)return;if(S.yb>=S.ya){msg("Choose a 'Before' year earlier than the 'After' year.");return}
+  const key=JSON.stringify(S.aoi.geometry)+S.yb+S.ya;$("#state").textContent="· computing…";
+  try{
+    if(cache.has(key)){({stats:S.stats,series:S.series}=cache.get(key))}
+    else{
+      const g=ee.Geometry(S.aoi.geometry),T=CFG.threshold,px=ee.Image.pixelArea();
+      const cb=composite(S.yb),ca=composite(S.ya),dv=index(ca,"ndvi").subtract(index(cb,"ndvi")),db=index(ca,"ndbi").subtract(index(cb,"ndbi"));
+      const means=ee.Image.cat([index(cb,"ndvi").rename("vb"),index(ca,"ndvi").rename("va"),index(cb,"ndbi").rename("bb"),index(ca,"ndbi").rename("ba")])
+        .reduceRegion({reducer:ee.Reducer.mean(),geometry:g,scale:CFG.scale,maxPixels:1e9,bestEffort:true});
+      const areas=ee.Image.cat([px.updateMask(dv.gt(T)).rename("vg"),px.updateMask(dv.lt(-T)).rename("vl"),px.updateMask(db.gt(T)).rename("bg"),px.updateMask(db.lt(-T)).rename("bl")])
+        .unmask(0).reduceRegion({reducer:ee.Reducer.sum(),geometry:g,scale:CFG.scale,maxPixels:1e9,bestEffort:true});
+      const ys=ee.List.sequence(CFG.years.min,CFG.years.max);
+      const ser=ee.FeatureCollection(ys.map(y=>{const c=composite(y);
+        const r=ee.Image.cat([index(c,"ndvi"),index(c,"ndbi")]).reduceRegion({reducer:ee.Reducer.mean(),geometry:g,scale:30,maxPixels:1e9,bestEffort:true});
+        return ee.Feature(null,r.set("year",y))}));
+      const[st,se]=await Promise.all([ev(ee.Dictionary({m:means,a:areas})),ev(ser)]);
+      S.stats=st;S.series=se.features.map(f=>f.properties);cache.set(key,{stats:S.stats,series:S.series});
+    }
+    render();$("#state").textContent="· live Earth Engine result";
+  }catch(e){$("#state").textContent="";msg("Analysis failed: "+e.message)}
+}
+const scheduleAnalysis=debounce(runAnalysis,700);
+function render(){
+  const{m,a}=S.stats,tot=turf.area(S.aoi),pc=v=>v==null?"—":fmt(v/tot*100,1)+"%",km=v=>fmt((v||0)/1e6,3);
+  $("#mArea").textContent=fmt(tot/1e6)+" km²";
+  $("#mNdvi").innerHTML=`${fmt(m.vb)} → ${fmt(m.va)}`;
+  $("#mVeg").innerHTML=`<span class="pos">+${km(a.vg)}</span> / <span class="neg">−${km(a.vl)}</span> <small>km² (${pc(a.vg)} / ${pc(a.vl)})</small>`;
+  $("#mBu").innerHTML=`<span class="neg">+${km(a.bg)}</span> / <span class="pos">−${km(a.bl)}</span> <small>km² (${pc(a.bg)} / ${pc(a.bl)})</small>`;
+  updateCharts()}
+
+/* ================= SEARCH ================= */
+const search=debounce(async q=>{const r=$("#res");if(q.length<3){r.style.display="none";return}
+  try{const res=await (await fetch(`${CFG.geocoder}?format=json&limit=5&q=${encodeURIComponent(q)}`)).json();
+    r.innerHTML="";if(!res.length){r.innerHTML="<div>No results</div>"}
+    res.forEach(p=>{const d=document.createElement("div");d.textContent=p.display_name;d.onclick=()=>{r.style.display="none";
+      const b=p.boundingbox;map.fitBounds([[+b[0],+b[2]],[+b[1],+b[3]]],{maxZoom:15})};r.appendChild(d)});r.style.display="block";
+  }catch(e){msg("Search failed: "+e.message)}},500);
+
+/* ================= EXPORT ================= */
+function download(name,text,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function statsRows(){if(!S.stats)return null;const{m,a}=S.stats,t=turf.area(S.aoi);
+  return[["metric","value"],["aoi_area_km2",t/1e6],["before_year",S.yb],["after_year",S.ya],["mean_ndvi_before",m.vb],["mean_ndvi_after",m.va],["mean_ndbi_before",m.bb],["mean_ndbi_after",m.ba],
+  ["veg_gain_km2",a.vg/1e6],["veg_loss_km2",a.vl/1e6],["builtup_gain_km2",a.bg/1e6],["builtup_loss_km2",a.bl/1e6],["veg_gain_pct",a.vg/t*100],["veg_loss_pct",a.vl/t*100],["builtup_gain_pct",a.bg/t*100],["builtup_loss_pct",a.bl/t*100]]}
+$("#eGeo").onclick=()=>S.aoi?download("aoi.geojson",JSON.stringify(S.aoi,null,2),"application/geo+json"):msg("Select an area first.");
+$("#eCsv").onclick=()=>{const r=statsRows();if(!r)return msg("No analysis yet — connect Earth Engine first.");download("geotime_stats.csv",r.map(x=>x.join(",")).join("\n"),"text/csv")};
+$("#eRep").onclick=()=>{const r=statsRows();if(!r)return msg("No analysis yet — connect Earth Engine first.");
+  download("geotime_report.txt",`GeoTime Machine — Change Summary\nGenerated: ${new Date().toISOString()}\nSource: ${CFG.collection} annual median composites (cloud <${CFG.maxCloud}%, SCL-masked), Google Earth Engine\nChange threshold: ±${CFG.threshold} index units; analysis scale ${CFG.scale} m\n\n`+
+  r.slice(1).map(x=>`${x[0]}: ${typeof x[1]==="number"?fmt(x[1],3):x[1]}`).join("\n")+
+  "\n\nLimitations: annual composites mix seasons; NDBI also responds to bare soil; pixel-level estimates carry 10–20 m uncertainty; results are indicative, not survey-grade.",  "text/plain")};
+
+/* ================= UI WIRING ================= */
+function syncYears(){["B","A"].forEach(k=>$("#y"+k).textContent=S[k==="B"?"yb":"ya"]);$("#range").textContent=`${S.yb} → ${S.ya} · Sentinel-2`}
+const commitYears=debounce(()=>{refresh();scheduleAnalysis();updateCharts()},400);
+[["B","yb"],["A","ya"]].forEach(([k,s])=>{const r=$("#r"+k);r.min=CFG.years.min;r.max=CFG.years.max;r.value=S[s];
+  r.oninput=()=>{S[s]=+r.value;syncYears();commitYears()}});
+$("#mode").onchange=e=>{S.mode=e.target.value;S.split=.5;refresh()};
+$("#base").onchange=e=>setBase(e.target.value);
+$("#q").oninput=e=>search(e.target.value.trim());
+$("#dRect").onclick=()=>startDraw("rect");$("#dPoly").onclick=()=>startDraw("poly");
+$("#bAuth").onclick=connectEE;
+const mobile=()=>matchMedia("(max-width:800px)").matches;
+$("#bL").onclick=()=>{$("#left").classList.toggle("off");if(mobile())$("#right").classList.add("off")};
+$("#bR").onclick=()=>{$("#right").classList.toggle("off");if(mobile())$("#left").classList.add("off")};
+function layout(){document.documentElement.style.setProperty("--tlh",$("#tl").offsetHeight+"px");map.invalidateSize();placeDivider();clipLayers()}
+addEventListener("resize",debounce(layout,120));addEventListener("orientationchange",()=>setTimeout(layout,300));
+$("#bFs").onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
+$("#play").onclick=()=>{
+  if(S.timer){clearInterval(S.timer);S.timer=null;$("#play").textContent="▶ Play";return}
+  if(!S.ready)return msg("Connect Earth Engine to animate real imagery dates.");
+  $("#play").textContent="⏸ Pause";S.ya=Math.min(S.ya,S.yb+1);
+  const step=()=>{S.ya=S.ya>=CFG.years.max?S.yb+1:S.ya+1;$("#rA").value=S.ya;syncYears();refresh();scheduleAnalysis()};step();S.timer=setInterval(step,4000)};
+if(matchMedia("(max-width:800px)").matches){$("#left").classList.add("off");$("#right").classList.add("off")}
+
+/* ================= INIT ================= */
+setBase("esri");syncYears();layout();placeDivider();initCharts();
+setAOI(L.rectangle(CFG.defaultAOI));map.fitBounds(aoiGroup.getBounds().pad(.6));
+msg("Tap “Connect Earth Engine” to load the Tunis 2018 → 2025 Sentinel-2 comparison. No data are shown as results until then.",9000);
+</script></body></html>
